@@ -31,4 +31,7 @@
 *.out
 *.app
 
+# Ignored directories
+.vscode
+.cache
 build
