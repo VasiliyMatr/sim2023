@@ -1,10 +1,10 @@
 # Describe hart module build
 
-add_sim_module(hart src/hart.cpp)
+add_sim_header_module(hart)
 
 target_link_libraries(hart
-PRIVATE
-    sim::csr
+INTERFACE
+    sim::common
     sim::gpr
     sim::memory
 )

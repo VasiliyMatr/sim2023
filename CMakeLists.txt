@@ -21,8 +21,8 @@ function(add_sim_header_module MODULE_NAME)
 endfunction(add_sim_header_module)
 
 # Add simulator module library
-function(add_sim_module MODULE_NAME SOURCES)
-    add_library(${MODULE_NAME} STATIC ${SOURCES})
+function(add_sim_module MODULE_NAME)
+    add_library(${MODULE_NAME})
     # Alias for linkage
     add_library(sim::${MODULE_NAME} ALIAS ${MODULE_NAME})
 
@@ -30,8 +30,9 @@ function(add_sim_module MODULE_NAME SOURCES)
     target_include_directories(${MODULE_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 endfunction(add_sim_module)
 
-add_subdirectory(csr)
+add_subdirectory(common)
 add_subdirectory(gpr)
 add_subdirectory(hart)
+add_subdirectory(instr)
 add_subdirectory(memory)
 add_subdirectory(simulator)
