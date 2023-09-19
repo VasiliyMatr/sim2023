@@ -8,10 +8,10 @@ namespace sim {
 namespace bit {
 
 TEST(Bit, ones) {
-    ASSERT_EQ(ones<uint8_t>(), 0xFF);
-    ASSERT_EQ(ones<uint16_t>(), 0xFFFF);
-    ASSERT_EQ(ones<uint32_t>(), 0xFFFFFFFF);
-    ASSERT_EQ(ones<uint64_t>(), 0xFFFFFFFFFFFFFFFF);
+    ASSERT_EQ(onesMask<uint8_t>(), 0xFF);
+    ASSERT_EQ(onesMask<uint16_t>(), 0xFFFF);
+    ASSERT_EQ(onesMask<uint32_t>(), 0xFFFFFFFF);
+    ASSERT_EQ(onesMask<uint64_t>(), 0xFFFFFFFFFFFFFFFF);
 }
 
 TEST(Bit, bitSize) {

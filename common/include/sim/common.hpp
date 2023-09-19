@@ -38,7 +38,7 @@ static constexpr size_t BYTE_SIZE = 8;
 static_assert(CHAR_BIT == BYTE_SIZE);
 
 // Return ones mask for given unsigned integer type
-template <class UInt> constexpr UInt ones() noexcept {
+template <class UInt> constexpr UInt onesMask() noexcept {
     static_assert(std::is_unsigned_v<UInt>);
     return UInt{0} - 1;
 }
