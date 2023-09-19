@@ -56,8 +56,9 @@ constexpr UInt signExtend(UInt value) noexcept {
     static_assert(std::is_unsigned_v<UInt>);
     static_assert(sign_idx < bitSize<UInt>());
 
-    UInt masked_sign = value & (UInt{1} << sign_idx);
-    return value | ~(masked_sign - 1);
+    UInt sign_mask = UInt{1} << sign_idx;
+    UInt masked_sign = value & sign_mask;
+    return value & (sign_mask - 1) | ~(masked_sign - 1);
 }
 
 // Same as constexpr version, but sign index is passed as function argument.
@@ -66,8 +67,9 @@ template <class UInt> UInt signExtend(BitIdx sign_idx, UInt value) noexcept {
     static_assert(std::is_unsigned_v<UInt>);
     SIM_ASSERT(sign_idx < bitSize<UInt>());
 
-    UInt masked_sign = value & (UInt{1} << sign_idx);
-    return value | ~(masked_sign - 1);
+    UInt sign_mask = UInt{1} << sign_idx;
+    UInt masked_sign = value & sign_mask;
+    return value & (sign_mask - 1) | ~(masked_sign - 1);
 }
 
 // Return bits in range [hi, lo] of a given value. Other bits are zeroed.
@@ -77,8 +79,15 @@ constexpr UInt getBits(UInt value) noexcept {
     static_assert(hi < bitSize<UInt>());
     static_assert(lo <= hi);
 
-    UInt mask = (UInt{1} << hi) ^ (UInt{1} << lo);
-    return value & mask;
+    UInt lo_mask = ~((UInt{1} << lo) - 1);
+    // Avoid bit shift on bitSize (Undefined Behaviour)
+    if (hi == bitSize<UInt>() - 1) {
+        return value & lo_mask;
+    }
+
+    UInt hi_mask = (UInt{1} << (hi + 1)) - 1;
+
+    return value & hi_mask & lo_mask;
 }
 
 // Return bits in range [hi, lo] of a given value. Other bits are zeroed.
