@@ -56,9 +56,11 @@ constexpr UInt signExtend(UInt value) noexcept {
     static_assert(std::is_unsigned_v<UInt>);
     static_assert(sign_idx < bitSize<UInt>());
 
+    // Zero upper bits
+    value &= (UInt{1} << (sign_idx + 1)) - 1;
+
     UInt sign_mask = UInt{1} << sign_idx;
-    UInt masked_sign = value & sign_mask;
-    return value & (sign_mask - 1) | ~(masked_sign - 1);
+    return (value ^ sign_mask) - sign_mask;
 }
 
 // Same as constexpr version, but sign index is passed as function argument.
@@ -67,34 +69,24 @@ template <class UInt> UInt signExtend(BitIdx sign_idx, UInt value) noexcept {
     static_assert(std::is_unsigned_v<UInt>);
     SIM_ASSERT(sign_idx < bitSize<UInt>());
 
+    // Zero upper bits
+    value &= (UInt{1} << (sign_idx + 1)) - 1;
+
     UInt sign_mask = UInt{1} << sign_idx;
-    UInt masked_sign = value & sign_mask;
-    return value & (sign_mask - 1) | ~(masked_sign - 1);
+    return (value ^ sign_mask) - sign_mask;
 }
 
-// Return bits in range [hi, lo] of a given value. Other bits are zeroed.
+// Get value of bit field that is stored in range [hi, lo]
 template <class UInt, BitIdx hi, BitIdx lo>
-constexpr UInt getBits(UInt value) noexcept {
-    static_assert(std::is_unsigned_v<UInt>);
-    static_assert(hi < bitSize<UInt>());
-    static_assert(lo <= hi);
-
-    UInt lo_mask = ~((UInt{1} << lo) - 1);
-    // Avoid bit shift on bitSize (Undefined Behaviour)
-    if (hi == bitSize<UInt>() - 1) {
-        return value & lo_mask;
-    }
-
-    UInt hi_mask = (UInt{1} << (hi + 1)) - 1;
-
-    return value & hi_mask & lo_mask;
+constexpr UInt getBitField(UInt value) noexcept {
+    size_t left_shift = bitSize<UInt>() - hi - 1;
+    return value << left_shift >> (left_shift + lo);
 }
 
-// Return bits in range [hi, lo] of a given value. Other bits are zeroed.
-// Returned value is shifted to the right by lo bits.
+// Bits out of range [hi, lo] are zeroed
 template <class UInt, BitIdx hi, BitIdx lo>
-constexpr UInt getBitsShifted(UInt value) noexcept {
-    return getBits<UInt, hi, lo>(value) >> lo;
+constexpr UInt maskBits(UInt value) noexcept {
+    return getBitField<UInt,hi, lo>(value) << lo;
 }
 
 } // namespace bit
