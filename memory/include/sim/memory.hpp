@@ -1,6 +1,7 @@
 #ifndef INCL_MEMORY_HPP
 #define INCL_MEMORY_HPP
 
+#include <cassert>
 #include <sim/common.hpp>
 #include <type_traits>
 #include <vector>
@@ -18,7 +19,7 @@ class PhysMemory final {
         SIM_ASSERT(phys_addr >= m_base_addr);
 
         auto offset = phys_addr - m_base_addr;
-        SIM_ASSERT(offset + sizeof(UInt) < m_data.size());
+        SIM_ASSERT(offset + sizeof(UInt) <= m_data.size());
 
         return offset;
     }
@@ -37,7 +38,7 @@ class PhysMemory final {
     void write(PhysAddr phys_addr, UInt value) {
         static_assert(std::is_unsigned_v<UInt>);
         auto offset = calcAndCheckOffset<UInt>(phys_addr);
-        *reinterpret_cast<const UInt*>(m_data.data() + offset) = value;
+        *reinterpret_cast<UInt*>(m_data.data() + offset) = value;
     }
 };
 
