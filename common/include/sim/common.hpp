@@ -15,6 +15,8 @@
             std::cerr << "Assertion failed: " << #cond << std::endl            \
                       << "Location: " << __FILE__ << ":" << __LINE__           \
                       << std::endl;                                            \
+                                                                               \
+            std::terminate();                                                  \
         }                                                                      \
     } while (0)
 #endif
