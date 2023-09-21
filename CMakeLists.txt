@@ -10,6 +10,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 # C++20 is the default standard
 set(CMAKE_CXX_STANDARD 20)
 
+find_package(GTest REQUIRED)
+if (NOT GTest_FOUND)
+    message(WARNING "GTest package is not found. Tests will not be built.")
+endif ()
+
 # Add header only simulator module library
 function(add_sim_header_module MODULE_NAME)
     add_library(${MODULE_NAME} INTERFACE)
