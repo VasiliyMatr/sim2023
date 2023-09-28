@@ -56,11 +56,15 @@ class GPRFile final {
 
   public:
     void write(size_t idx, RegValue value) noexcept {
+        SIM_ASSERT(idx < GPR_NUMBER);
+
         m_gpr[idx] = value;
         m_gpr[GPR_IDX::ZERO] = 0;
     }
 
     template <class UInt> NODISCARD UInt read(size_t idx) const noexcept {
+        SIM_ASSERT(idx < GPR_NUMBER);
+
         return m_gpr[idx];
     }
 };
