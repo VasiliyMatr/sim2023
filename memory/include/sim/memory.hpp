@@ -20,6 +20,8 @@ struct PhysMemory final {
 
     NODISCARD auto getAccessStatus(PhysAddr phys_addr,
                                    size_t access_size) const noexcept {
+        SIM_ASSERT(access_size > 0);
+
         if (phys_addr < m_base_addr) {
             return AccessStatus::RANGE_ERROR;
         }
@@ -72,6 +74,8 @@ struct PhysMemory final {
     NODISCARD AccessStatus
     getConstHostPtr(PhysAddr phys_addr, size_t access_size,
                     const uint8_t *&host_ptr) const noexcept {
+        SIM_ASSERT(access_size > 0);
+
         if (auto status = getAccessStatus(phys_addr, access_size);
             status != AccessStatus::OK) {
             host_ptr = nullptr;
@@ -86,6 +90,8 @@ struct PhysMemory final {
     NODISCARD AccessStatus getMuteHostPtr(PhysAddr phys_addr,
                                           size_t access_size,
                                           uint8_t *&host_ptr) noexcept {
+        SIM_ASSERT(access_size > 0);
+
         if (auto status = getAccessStatus(phys_addr, access_size);
             status != AccessStatus::OK) {
             host_ptr = nullptr;
