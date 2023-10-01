@@ -1,3 +1,4 @@
+#include "gtest/gtest.h"
 #include <cstdint>
 #include <random>
 
@@ -111,7 +112,7 @@ TEST_F(PhysMemoryTest, rangeErrorHostPtr) {
     }
 }
 
-TEST_F(PhysMemoryTest, constHostAddr) {
+TEST_F(PhysMemoryTest, constHostPtr) {
     PhysMemory pm{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
 
     PhysAddr pa = DATA_SEGMENT_BASE_ADDR + 0x1000;
@@ -130,7 +131,7 @@ TEST_F(PhysMemoryTest, constHostAddr) {
     ASSERT_EQ(host_ptr[1], write_value2);
 }
 
-TEST_F(PhysMemoryTest, muteHostAddr) {
+TEST_F(PhysMemoryTest, muteHostPtr) {
     PhysMemory pm{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
 
     PhysAddr pa = DATA_SEGMENT_BASE_ADDR + 0x1000;
@@ -148,6 +149,19 @@ TEST_F(PhysMemoryTest, muteHostAddr) {
     ASSERT_EQ(pm.read(pa + 1, read_value2), PhysMemory::AccessStatus::OK);
     ASSERT_EQ(read_value1, host_ptr[0]);
     ASSERT_EQ(read_value2, host_ptr[1]);
+}
+
+TEST_F(PhysMemoryTest, zeroAccessSizeDeath) {
+    PhysMemory pm{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
+
+    PhysAddr pa = DATA_SEGMENT_BASE_ADDR + 0x1000;
+
+    const uint8_t *const_host_ptr = nullptr;
+    ASSERT_DEATH(std::ignore = pm.getConstHostPtr(pa, 0, const_host_ptr),
+                 "access_size > 0");
+    uint8_t *mute_host_ptr = nullptr;
+    ASSERT_DEATH(std::ignore = pm.getMuteHostPtr(pa, 0, mute_host_ptr),
+                 "access_size > 0");
 }
 
 } // namespace memory
