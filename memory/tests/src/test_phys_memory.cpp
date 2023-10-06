@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
 #include <cstdint>
 #include <random>
+#include <unordered_map>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest-spi.h>
@@ -8,7 +8,6 @@
 
 #include <sim/common.hpp>
 #include <sim/memory.hpp>
-#include <unordered_map>
 
 namespace sim {
 namespace memory {
