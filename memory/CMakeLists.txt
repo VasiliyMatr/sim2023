@@ -6,3 +6,5 @@ target_link_libraries(memory
 INTERFACE
     sim::common
 )
+
+add_subdirectory(tests)
