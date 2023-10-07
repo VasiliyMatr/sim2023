@@ -25,11 +25,20 @@ namespace sim {
 
 using std::size_t;
 
+template<class Enum>
+constexpr auto to_underlying(Enum e) noexcept {
+    return static_cast<std::underlying_type_t<Enum>>(e);
+}
+
+enum class XLen { XLEN_32 = 32, XLEN_64 = 64 };
+
 using RegValue = uint64_t;
 using PhysAddr = RegValue;
 using VirtAddr = RegValue;
 
 using InstrCode = uint32_t;
+
+enum class PrivLevel { USER = 0b00, SUPERVISOR = 0b01, MACHINE = 0b11 };
 
 namespace bit {
 
@@ -81,6 +90,10 @@ template <class UInt> UInt signExtend(BitIdx sign_idx, UInt value) noexcept {
 // Get value of bit field that is stored in range [hi, lo]
 template <class UInt, BitIdx hi, BitIdx lo>
 constexpr UInt getBitField(UInt value) noexcept {
+    static_assert(std::is_unsigned_v<UInt>);
+    static_assert(bitSize<UInt>() > hi);
+    static_assert(hi >= lo);
+
     size_t left_shift = bitSize<UInt>() - hi - 1;
     return value << left_shift >> (left_shift + lo);
 }
@@ -88,7 +101,11 @@ constexpr UInt getBitField(UInt value) noexcept {
 // Bits out of range [hi, lo] are zeroed
 template <class UInt, BitIdx hi, BitIdx lo>
 constexpr UInt maskBits(UInt value) noexcept {
-    return getBitField<UInt,hi, lo>(value) << lo;
+    static_assert(std::is_unsigned_v<UInt>);
+    static_assert(bitSize<UInt>() > hi);
+    static_assert(hi >= lo);
+
+    return getBitField<UInt, hi, lo>(value) << lo;
 }
 
 } // namespace bit
