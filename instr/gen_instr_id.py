@@ -1,22 +1,35 @@
+import yaml
 
-gen = open("instr_id.gen.hpp", "w")
 
-gen.write(
-    "#ifndef INCL_TYPE_GEN_HPP" "\n"
-    "#define INCL_TYPE_GEN_HPP" "\n"
+def main():
+    with open("risc-v.yaml") as f:
+        yaml_dump = dict(yaml.safe_load(f))
 
-    "namespace sim {" "\n"
-    "namespace instr {" "\n"
+    write_buffer = "#ifndef INCL_TYPE_GEN_HPP" "\n" +\
+                   "#define INCL_TYPE_GEN_HPP" "\n" +\
+                   "#include <cstdint>" "\n" +\
+                   "namespace sim {" "\n" +\
+                   "namespace instr {" "\n" +\
+                   "enum class InstrId : uint8_t {" "\n"
 
-    "enum class InstrId : uint16_t {" "\n"
-    "    UNDEF," "\n"
-    "    NOP," "\n"
-    "    ADDI," "\n"
-    # ....
-    "};" "\n"
+    write_buffer += "UNDEF,\n"
+    for inst in yaml_dump.get("instructions"):
+        inst_name = inst.get("mnemonic").upper()
+        if "." in inst_name:
+            inst_name = inst_name.replace(".", "_", 2)
 
-    "} // namespace instr" "\n"
-    "} // namespace sim" "\n"
+        write_buffer += f"{inst_name},\n"
 
-    "#endif // INCL_TYPE_GEN_HPP" "\n"
-)
+    write_buffer += "};\n\n"
+    write_buffer += "} // namespace instr" "\n"
+    write_buffer += "} // namespace sim" "\n"
+
+    write_buffer += "#endif // INCL_TYPE_GEN_HPP" "\n"
+
+    gen = open("instr_id.gen.hpp", "w+")
+
+    gen.write(write_buffer)
+
+
+if __name__ == "__main__":
+    main()

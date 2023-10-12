@@ -17,6 +17,7 @@ class Instr final {
     uint8_t m_rs1 = 0;
     uint8_t m_rs2 = 0;
     uint32_t m_imm = 0;
+    uint8_t m_rm = 0;
 
   public:
     NODISCARD auto id() const noexcept { return m_id; }
