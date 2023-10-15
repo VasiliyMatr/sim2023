@@ -1,7 +1,8 @@
-#ifndef INCL_SIMULATOR_HPP
-#define INCL_SIMULATOR_HPP
+#ifndef SIMULATOR_HPP
+#define SIMULATOR_HPP
 
 #include <sim/common.hpp>
+#include <sim/instr.hpp>
 #include <sim/hart.hpp>
 #include <sim/memory.hpp>
 
@@ -17,6 +18,9 @@ struct Simulator final {
 
     hart::Hart m_hart{m_phys_memory};
 
+    template<instr::InstrId>
+    SimStatus simInstr(const instr::Instr &instr) noexcept;
+
   public:
     template <class It> void binLoad(PhysAddr base_addr, It begin, It end);
     SimStatus simulate(PhysAddr start_pc);
@@ -24,4 +28,4 @@ struct Simulator final {
 
 } // namespace sim
 
-#endif // INCL_SIMULATOR_HPP
+#endif // SIMULATOR_HPP
