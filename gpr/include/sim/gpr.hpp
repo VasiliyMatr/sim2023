@@ -11,7 +11,7 @@
 namespace sim {
 namespace gpr {
 
-inline constexpr size_t GPR_NUMBER = 32;
+static constexpr size_t GPR_NUMBER = 32;
 
 namespace GPR_IDX {
 enum GPR_IDX : size_t {
