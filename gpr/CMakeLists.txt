@@ -6,3 +6,5 @@ target_link_libraries(gpr
 INTERFACE
     sim::common
 )
+
+add_subdirectory(tests)
