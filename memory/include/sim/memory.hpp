@@ -41,32 +41,32 @@ struct PhysMemory final {
     NODISCARD auto baseAddr() const noexcept { return m_base_addr; }
     NODISCARD auto size() const noexcept { return m_data.size(); }
 
-    template <class UInt>
-    NODISCARD AccessStatus read(PhysAddr phys_addr, UInt &dst) const noexcept {
-        static_assert(std::is_unsigned_v<UInt>);
+    template <class Int>
+    NODISCARD AccessStatus read(PhysAddr phys_addr, Int &dst) const noexcept {
+        static_assert(std::is_integral_v<Int>);
 
-        if (auto status = getAccessStatus(phys_addr, sizeof(UInt));
+        if (auto status = getAccessStatus(phys_addr, sizeof(Int));
             status != AccessStatus::OK) {
             return status;
         }
 
         auto offset = phys_addr - m_base_addr;
-        dst = *reinterpret_cast<const UInt *>(m_data.data() + offset);
+        dst = *reinterpret_cast<const Int *>(m_data.data() + offset);
 
         return AccessStatus::OK;
     }
 
-    template <class UInt>
-    NODISCARD AccessStatus write(PhysAddr phys_addr, UInt value) {
-        static_assert(std::is_unsigned_v<UInt>);
+    template <class Int>
+    NODISCARD AccessStatus write(PhysAddr phys_addr, Int value) {
+        static_assert(std::is_integral_v<Int>);
 
-        if (auto status = getAccessStatus(phys_addr, sizeof(UInt));
+        if (auto status = getAccessStatus(phys_addr, sizeof(Int));
             status != AccessStatus::OK) {
             return status;
         }
 
         auto offset = phys_addr - m_base_addr;
-        *reinterpret_cast<UInt *>(m_data.data() + offset) = value;
+        *reinterpret_cast<Int *>(m_data.data() + offset) = value;
 
         return AccessStatus::OK;
     }

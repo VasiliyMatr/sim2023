@@ -62,7 +62,8 @@ class GPRFile final {
         m_gpr[GPR_IDX::ZERO] = 0;
     }
 
-    template <class UInt> NODISCARD UInt read(size_t idx) const noexcept {
+    template <class Int> NODISCARD Int read(size_t idx) const noexcept {
+        static_assert(std::is_integral_v<Int>);
         SIM_ASSERT(idx < GPR_NUMBER);
 
         return m_gpr[idx];

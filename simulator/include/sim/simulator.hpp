@@ -1,5 +1,5 @@
-#ifndef SIMULATOR_HPP
-#define SIMULATOR_HPP
+#ifndef INCL_SIMULATOR_HPP
+#define INCL_SIMULATOR_HPP
 
 #include <sim/common.hpp>
 #include <sim/instr.hpp>
@@ -28,4 +28,4 @@ struct Simulator final {
 
 } // namespace sim
 
-#endif // SIMULATOR_HPP
+#endif // INCL_SIMULATOR_HPP
