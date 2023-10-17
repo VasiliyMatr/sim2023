@@ -11,6 +11,7 @@ namespace sim {
 struct Simulator final {
     enum class SimStatus {
         OK,
+        PHYS_MEMORY_ERROR,
     };
 
   private:
