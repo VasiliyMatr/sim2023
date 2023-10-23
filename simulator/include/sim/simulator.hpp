@@ -12,6 +12,7 @@ struct Simulator final {
     enum class SimStatus {
         OK,
         PHYS_MEMORY_ERROR,
+        PC_ALIGN_ERROR,
     };
 
   private:

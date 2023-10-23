@@ -1,6 +1,7 @@
 #ifndef INCL_SIM_INSTR_HPP
 #define INCL_SIM_INSTR_HPP
 
+#include "sim/hart.hpp"
 #include "sim/memory.hpp"
 #include <cstdint>
 
@@ -10,6 +11,9 @@
 #include <sim/simulator.hpp>
 
 namespace sim {
+
+static constexpr size_t INSTR_CODE_SIZE = sizeof(InstrCode);
+static constexpr PhysAddr PC_ALIGN_MASK = 0x3;
 
 #define SIM_INSTR(INSTR_NAME)                                                  \
     template <>                                                                \
@@ -22,6 +26,7 @@ SIM_INSTR(ADDIW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -31,6 +36,7 @@ SIM_INSTR(SLLI) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -40,6 +46,7 @@ SIM_INSTR(SRLI) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -49,6 +56,7 @@ SIM_INSTR(SRAI) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -58,6 +66,7 @@ SIM_INSTR(SLLIW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -67,6 +76,7 @@ SIM_INSTR(SRLIW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -76,6 +86,7 @@ SIM_INSTR(SRAIW) {
 
     gpr.write(instr.rd(), word_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -84,6 +95,7 @@ SIM_INSTR(LUI) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(instr.imm()));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -93,6 +105,7 @@ SIM_INSTR(AUIPC) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -103,6 +116,7 @@ SIM_INSTR(SLL) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -113,6 +127,7 @@ SIM_INSTR(SRL) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -123,6 +138,7 @@ SIM_INSTR(SRA) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -133,6 +149,7 @@ SIM_INSTR(ADDW) {
 
     gpr.write(instr.rd(), word_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -143,6 +160,7 @@ SIM_INSTR(SUBW) {
 
     gpr.write(instr.rd(), word_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -153,6 +171,7 @@ SIM_INSTR(SLLW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -163,6 +182,7 @@ SIM_INSTR(SRLW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -173,6 +193,7 @@ SIM_INSTR(SRAW) {
 
     gpr.write(instr.rd(), word_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -190,6 +211,7 @@ SIM_INSTR(LD) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -207,6 +229,7 @@ SIM_INSTR(LW) {
 
     gpr.write(instr.rd(), word_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -224,6 +247,7 @@ SIM_INSTR(LWU) {
 
     gpr.write(instr.rd(), word_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -241,6 +265,7 @@ SIM_INSTR(LH) {
 
     gpr.write(instr.rd(), half_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -258,6 +283,7 @@ SIM_INSTR(LHU) {
 
     gpr.write(instr.rd(), half_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -275,6 +301,7 @@ SIM_INSTR(LB) {
 
     gpr.write(instr.rd(), byte_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -292,6 +319,7 @@ SIM_INSTR(LBU) {
 
     gpr.write(instr.rd(), byte_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -303,7 +331,11 @@ SIM_INSTR(SD) {
     auto value = gpr.read<uint64_t>(instr.rs2());
 
     auto status = phys_memory.write(phys_addr, value);
+    if (status != memory::PhysMemory::AccessStatus::OK) {
+        return SimStatus::PHYS_MEMORY_ERROR;
+    }
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -315,7 +347,11 @@ SIM_INSTR(SW) {
     auto value = gpr.read<uint32_t>(instr.rs2());
 
     auto status = phys_memory.write(phys_addr, value);
+    if (status != memory::PhysMemory::AccessStatus::OK) {
+        return SimStatus::PHYS_MEMORY_ERROR;
+    }
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -327,7 +363,11 @@ SIM_INSTR(SH) {
     auto value = gpr.read<uint16_t>(instr.rs2());
 
     auto status = phys_memory.write(phys_addr, value);
+    if (status != memory::PhysMemory::AccessStatus::OK) {
+        return SimStatus::PHYS_MEMORY_ERROR;
+    }
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -339,8 +379,122 @@ SIM_INSTR(SB) {
     auto value = gpr.read<uint8_t>(instr.rs2());
 
     auto status = phys_memory.write(phys_addr, value);
+    if (status != memory::PhysMemory::AccessStatus::OK) {
+        return SimStatus::PHYS_MEMORY_ERROR;
+    }
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
+}
+
+SIM_INSTR(JAL) {
+    auto &gpr = m_hart.gprFile();
+
+    auto link_pc = m_hart.pc() + 4;
+    auto offset = static_cast<int64_t>(instr.imm()) << 1;
+    auto new_pc = m_hart.pc() + offset;
+
+    if (new_pc & PC_ALIGN_MASK) {
+        return SimStatus::PC_ALIGN_ERROR;
+    }
+
+    gpr.write(instr.rd(), link_pc);
+
+    m_hart.pc() = new_pc;
+    return SimStatus::OK;
+}
+
+SIM_INSTR(JALR) {
+    auto &gpr = m_hart.gprFile();
+
+    auto link_pc = m_hart.pc() + 4;
+    int64_t offset = instr.imm();
+    auto new_pc = (offset + gpr.read<int64_t>(instr.rs1())) ^ 1;
+
+    if (new_pc & PC_ALIGN_MASK) {
+        return SimStatus::PC_ALIGN_ERROR;
+    }
+
+    gpr.write(instr.rd(), link_pc);
+
+    m_hart.pc() = new_pc;
+    return SimStatus::OK;
+}
+
+namespace {
+
+Simulator::SimStatus simCondBranch(const instr::Instr &instr, hart::Hart &hart,
+                                   bool cond) {
+    if (cond) {
+        auto offset = static_cast<int64_t>(instr.imm()) << 1;
+        auto new_pc = hart.pc() + offset;
+
+        if (new_pc & PC_ALIGN_MASK) {
+            return Simulator::SimStatus::PC_ALIGN_ERROR;
+        }
+
+        hart.pc() = new_pc;
+        return Simulator::SimStatus::OK;
+    }
+
+    hart.pc() += INSTR_CODE_SIZE;
+    return Simulator::SimStatus::OK;
+}
+
+} // namespace
+
+SIM_INSTR(BEQ) {
+    auto &gpr = m_hart.gprFile();
+
+    auto rs1 = gpr.read<int64_t>(instr.rs1());
+    auto rs2 = gpr.read<int64_t>(instr.rs2());
+
+    return simCondBranch(instr, m_hart, rs1 == rs2);
+}
+
+SIM_INSTR(BNE) {
+    auto &gpr = m_hart.gprFile();
+
+    auto rs1 = gpr.read<int64_t>(instr.rs1());
+    auto rs2 = gpr.read<int64_t>(instr.rs2());
+
+    return simCondBranch(instr, m_hart, rs1 != rs2);
+}
+
+SIM_INSTR(BLT) {
+    auto &gpr = m_hart.gprFile();
+
+    auto rs1 = gpr.read<int64_t>(instr.rs1());
+    auto rs2 = gpr.read<int64_t>(instr.rs2());
+
+    return simCondBranch(instr, m_hart, rs1 < rs2);
+}
+
+SIM_INSTR(BLTU) {
+    auto &gpr = m_hart.gprFile();
+
+    auto rs1 = gpr.read<uint64_t>(instr.rs1());
+    auto rs2 = gpr.read<uint64_t>(instr.rs2());
+
+    return simCondBranch(instr, m_hart, rs1 < rs2);
+}
+
+SIM_INSTR(BGE) {
+    auto &gpr = m_hart.gprFile();
+
+    auto rs1 = gpr.read<int64_t>(instr.rs1());
+    auto rs2 = gpr.read<int64_t>(instr.rs2());
+
+    return simCondBranch(instr, m_hart, rs1 >= rs2);
+}
+
+SIM_INSTR(BGEU) {
+    auto &gpr = m_hart.gprFile();
+
+    auto rs1 = gpr.read<uint64_t>(instr.rs1());
+    auto rs2 = gpr.read<uint64_t>(instr.rs2());
+
+    return simCondBranch(instr, m_hart, rs1 >= rs2);
 }
 
 #undef SIM_INSTR
