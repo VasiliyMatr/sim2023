@@ -2,7 +2,7 @@ import yaml
 
 
 def main():
-    with open("risc-v.yaml") as f:
+    with open("./risc-v.yaml") as f:
         yaml_dump = dict(yaml.safe_load(f))
 
     write_buffer = "#ifndef INCL_TYPE_GEN_HPP" "\n" +\

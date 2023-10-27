@@ -6,13 +6,13 @@ KNOWN_IMMS = [ "imm12", "imm20", "jimm20", "storeimm", "bimm", "shamt", "shamtw"
 
 def GenerateGetBinValue(bit_section: dict) -> str:
     write_buffer = ""
-    write_buffer += "getBitField<InstrCode,"
+    write_buffer += "bit::getBitField<InstrCode,"
     write_buffer += f"{bit_section.get('msb')},"
     write_buffer += f"{bit_section.get('lsb')}>(instr_code)"
 
     shift = bit_section.get('to')
     if shift != 0:
-        write_buffer += f" << Word({shift})"
+        write_buffer += f" << {shift}"
     return write_buffer
 
 
@@ -33,8 +33,8 @@ def GenerateFieldAssigning(inst: dict, field_dict: dict) -> str:
                 write_buffer += GenerateGetBinValue(bit_section)
                 write_buffer += ");\n"
         
-        if field in KNOWN_IMMS:
-            write_buffer += f"m_imm = signExtend<{extend_from + 1}>(m_imm);\n"
+        if field in KNOWN_IMMS and extend_from <= 30:
+            write_buffer += f"m_imm = bit::signExtend<InstrCode ,{extend_from + 1}>(m_imm);\n"
     
     return write_buffer
 
@@ -50,32 +50,78 @@ def GenerateSwitchCaseMasks(yaml_dump: dict) -> str:
 
             
     for mask, inst_dict in masks.items():
-        write_buffer += f"swicth (instr_code & 0x{mask}) {{\n"
+        write_buffer += f"switch (instr_code & 0x{mask}) {{\n"
         for inst_name, inst in inst_dict.items():
             match = inst.get("debug_hex_fixedvalue")
 
             write_buffer += f"case 0x{match}:\n"
             write_buffer += GenerateFieldAssigning(inst, yaml_dump.get("fields"))
-            write_buffer += "return decoded_instr;\n"
+            write_buffer += "break;\n"
 
         write_buffer += "default:\nbreak;\n}\n"
 
 
     return write_buffer
 
-def main():
+def GenerateHandleNode(node_dict : dict, field_dict: dict) -> str:
+    write_buffer = ""
 
+    for key, value in node_dict.items():
+
+        if type(key) is int:
+            write_buffer += f"case {key}:\n"
+            if value.get("range") is not None:
+                write_buffer += GenerateHandleNode(value, field_dict)
+            elif value.get("mnemonic") is not None:
+                write_buffer += GenerateFieldAssigning(value, field_dict)
+            
+            write_buffer += "break;\n"
+
+
+        elif key == "range":
+            #write_buffer += "std::cout << bit::getBitField<InstrCode, 6, 0>(instr_code) << std::endl;"
+            write_buffer += "switch ("
+            write_buffer += "bit::getBitField<InstrCode,"
+            write_buffer += f"{value.get('msb')},"
+            write_buffer += f"{value.get('lsb')}>(instr_code)"
+            write_buffer += ")\n"
+
+        elif key == "nodes":
+            write_buffer += "{\n"
+            write_buffer += GenerateHandleNode(value, field_dict)
+            write_buffer += "default:\nbreak;"
+            write_buffer += "}\n"
+
+        
+        else:
+            print("Unknown key:", key)
+
+    return write_buffer
+
+
+def GenerateDecoderTree(yaml_dump: dict) -> str:
+    write_buffer = ""
+    write_buffer += GenerateHandleNode(yaml_dump.get("decodertree"), yaml_dump.get("fields"))
+    
+
+    return write_buffer
+
+
+def main():
     with open("risc-v.yaml") as f:
         yaml_dump = dict(yaml.safe_load(f))
 
     write_buffer = "#include <sim/instr.hpp>" "\n"  +\
+        "#include <sim/common.hpp> \n"              +\
+        "#include <iostream> \n"              +\
         "\n"                                        +\
         "namespace sim {" "\n"                      +\
         "namespace instr {" "\n"                    +\
         "\n"                                        +\
         "Instr::Instr(InstrCode instr_code) {" "\n"
 
-    write_buffer += GenerateSwitchCaseMasks(yaml_dump)    
+    #write_buffer += GenerateSwitchCaseMasks(yaml_dump)
+    write_buffer += GenerateDecoderTree(yaml_dump)    
 
     write_buffer += "}\n"
     write_buffer += "}" "\n"
