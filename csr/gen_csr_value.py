@@ -45,12 +45,12 @@ def gen_field_code(field_name: str, field_descr: dict | list[int]) -> str:
 
     # Write getter
     out += "auto get%s() const noexcept {\n" % upper_field_name
-    out += "raw_value = bit::getBitField<RawValue, %d, %d>(getValue());" % (hi, lo)
+    out += "auto raw_value = bit::getBitField<RawValue, %d, %d>(getValue());" % (hi, lo)
     out += "return " + ("raw_value;\n" if enum_descr == None else "%s{};\n" % enum_name)
     out += "}\n"
 
     # Write setter
-    out += "void set%s(%s value) noexcept {\n" % (upper_field_name, field_value)
+    out += "void set%s(RawValue value) noexcept {\n" % upper_field_name
     out += "auto mask = (RawValue{1} << %d) - (RawValue{1} << %d);\n" % (hi, lo)
     out += "value = (value << %d) & mask;\n" % lo
     out += "setValue((getValue() & ~mask) | value);\n"
@@ -64,7 +64,7 @@ def gen_csr_spec(csr_name: str, xlen: int, spec_descr: dict) -> str:
     xlen_str = "XLen::XLEN_%d" % xlen
     base_str = "BaseCSRValue%d" % xlen
 
-    out = "template<> struct CSRValue<CSRIdx::%s, %s> : public %s {\n" % (csr_name.upper(), xlen_str, base_str)
+    out = "template<> struct CSRValue<%s, CSRIdx::%s> : public %s {\n" % (xlen_str, csr_name.upper(), base_str)
     out += "using %s::RawValue;\n\n" % base_str
 
     for field_name, field_descr in spec_descr.items():

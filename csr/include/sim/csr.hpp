@@ -5,46 +5,50 @@
 
 #include <sim/common.hpp>
 
-namespace sim {
-namespace csr {
+#include <sim/csr/idx.gen.hpp>
+#include <sim/csr/value.gen.hpp>
 
-enum class CSRIdx {
-    SSTATUS = 0x100,
-    SATP = 0x180,
-};
+namespace sim::csr {
 
-NODISCARD inline bool isSupported(CSRIdx idx) noexcept;
-NODISCARD inline bool isReadable(CSRIdx idx, PrivLevel priv_level) noexcept;
-NODISCARD inline bool isWritable(CSRIdx idx, PrivLevel priv_level) noexcept;
+NODISCARD constexpr inline bool isCSRSupported(CSRIdx idx) noexcept {
+    switch (idx) {
+    case CSRIdx::SATP:
+        return true;
+    default:
+        return false;
+    }
 
-template <XLen xlen> struct RawCSRValueType;
+    SIM_ASSERT(false);
+}
 
-template <> struct RawCSRValueType<XLen::XLEN_32> { using Type = uint32_t; };
-template <> struct RawCSRValueType<XLen::XLEN_64> { using Type = uint64_t; };
+NODISCARD constexpr inline bool isCSRWritable(CSRIdx idx) noexcept {
+    constexpr bit::BitIdx HI = 11;
+    constexpr bit::BitIdx LO = 10;
 
-template <XLen xlen> using RawCSRValue = typename RawCSRValueType<xlen>::Type;
+    constexpr uint16_t READ_ONLY_CODE = 0b11;
 
-template <XLen xlen> struct BaseCSRValue {
-    using RawValue = RawCSRValue<xlen>;
+    return bit::getBitField<uint16_t, HI, LO>(to_underlying(idx)) ==
+           READ_ONLY_CODE;
+}
 
-  private:
-    RawValue m_value = 0;
+NODISCARD constexpr inline PrivLevel getCSRPrivLevel(CSRIdx idx) noexcept {
+    constexpr bit::BitIdx HI = 9;
+    constexpr bit::BitIdx LO = 8;
 
-  protected:
-    BaseCSRValue(RawValue value) : m_value(value) {}
+    constexpr uint16_t HYPERVISOR_CODE = 0b10;
 
-  public:
-    NODISCARD auto getValue() const noexcept { return m_value; }
-    void setValue(RawValue value) noexcept { m_value = value; }
-};
+    auto raw_priv_level =
+        bit::getBitField<uint16_t, HI, LO>(to_underlying(idx));
 
-using BaseCSRValue32 = BaseCSRValue<XLen::XLEN_32>;
-using BaseCSRValue64 = BaseCSRValue<XLen::XLEN_64>;
+    if (raw_priv_level == HYPERVISOR_CODE) {
+        return PrivLevel::MACHINE;
+    }
 
-template <XLen xlen, CSRIdx idx> class CSRValue;
+    return PrivLevel{raw_priv_level};
+}
 
 struct CSRFile final {
-    enum class AccessStatus { OK, UNKNOWN_CSR };
+    enum class AccessStatus { OK, CSR_NOT_SUPPORTED };
 
   private:
     static constexpr size_t CSR_NUMBER = 4096;
@@ -53,38 +57,42 @@ struct CSRFile final {
 
   public:
     template <XLen xlen>
-    NODISCARD AccessStatus read(CSRIdx idx,
-                                RawCSRValue<xlen> &dst) const noexcept {
-        if (isSupported(idx)) {
+    NODISCARD constexpr AccessStatus
+    read(CSRIdx idx, RawCSRValue<xlen> &dst) const noexcept {
+        if (isCSRSupported(idx)) {
             dst = m_CSRs[to_underlying(idx)];
             return AccessStatus::OK;
         }
 
-        return AccessStatus::UNKNOWN_CSR;
+        return AccessStatus::CSR_NOT_SUPPORTED;
     }
 
     template <XLen xlen>
-    NODISCARD AccessStatus write(CSRIdx idx, RawCSRValue<xlen> value) noexcept {
-        if (isSupported(idx)) {
+    NODISCARD constexpr AccessStatus write(CSRIdx idx,
+                                           RawCSRValue<xlen> value) noexcept {
+        if (isCSRSupported(idx)) {
             m_CSRs[to_underlying(idx)] = value;
             return AccessStatus::OK;
         }
 
-        return AccessStatus::UNKNOWN_CSR;
+        return AccessStatus::CSR_NOT_SUPPORTED;
     }
 
     template <XLen xlen, CSRIdx idx>
     NODISCARD CSRValue<xlen, idx> read() const noexcept {
+        static_assert(isCSRSupported(idx));
+
         return m_CSRs[to_underlying(idx)];
     }
 
     template <XLen xlen, CSRIdx idx>
     void write(CSRValue<xlen, idx> value) noexcept {
+        static_assert(isCSRSupported(idx));
+
         m_CSRs[to_underlying(idx)] = value.getValue();
     }
 };
 
-} // namespace csr
-} // namespace sim
+} // namespace sim::csr
 
 #endif // INCL_CSR_HPP
