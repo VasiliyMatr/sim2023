@@ -10,17 +10,6 @@
 
 namespace sim::csr {
 
-NODISCARD constexpr inline bool isCSRSupported(CSRIdx idx) noexcept {
-    switch (idx) {
-    case CSRIdx::SATP:
-        return true;
-    default:
-        return false;
-    }
-
-    SIM_ASSERT(false);
-}
-
 NODISCARD constexpr inline bool isCSRWritable(CSRIdx idx) noexcept {
     constexpr bit::BitIdx HI = 11;
     constexpr bit::BitIdx LO = 10;
@@ -51,46 +40,32 @@ struct CSRFile final {
     enum class AccessStatus { OK, CSR_NOT_SUPPORTED };
 
   private:
-    static constexpr size_t CSR_NUMBER = 4096;
-
-    std::array<RawCSRValue<XLen::XLEN_64>, CSR_NUMBER> m_CSRs{};
+    CSRValue<XLen::XLEN_64, CSRIdx::SATP> m_satp64{};
 
   public:
     template <XLen xlen>
-    NODISCARD constexpr AccessStatus
-    read(CSRIdx idx, RawCSRValue<xlen> &dst) const noexcept {
-        if (isCSRSupported(idx)) {
-            dst = m_CSRs[to_underlying(idx)];
-            return AccessStatus::OK;
+    NODISCARD AccessStatus read(CSRIdx idx,
+                                RawCSRValue<xlen> &dst) const noexcept {
+        switch (idx) {
+        case CSRIdx::SATP:
+            dst = get<xlen, CSRIdx::SATP>().getValue();
+            break;
+
+        default:
+            return AccessStatus::CSR_NOT_SUPPORTED;
         }
 
-        return AccessStatus::CSR_NOT_SUPPORTED;
+        return AccessStatus::OK;
     }
 
     template <XLen xlen>
-    NODISCARD constexpr AccessStatus write(CSRIdx idx,
-                                           RawCSRValue<xlen> value) noexcept {
-        if (isCSRSupported(idx)) {
-            m_CSRs[to_underlying(idx)] = value;
-            return AccessStatus::OK;
-        }
-
-        return AccessStatus::CSR_NOT_SUPPORTED;
-    }
+    NODISCARD AccessStatus write(CSRIdx idx, RawCSRValue<xlen> value) noexcept;
 
     template <XLen xlen, CSRIdx idx>
-    NODISCARD CSRValue<xlen, idx> read() const noexcept {
-        static_assert(isCSRSupported(idx));
-
-        return m_CSRs[to_underlying(idx)];
-    }
+    NODISCARD const CSRValue<xlen, idx> &get() const noexcept;
 
     template <XLen xlen, CSRIdx idx>
-    void write(CSRValue<xlen, idx> value) noexcept {
-        static_assert(isCSRSupported(idx));
-
-        m_CSRs[to_underlying(idx)] = value.getValue();
-    }
+    void set(const CSRValue<xlen, idx> &value) noexcept;
 };
 
 } // namespace sim::csr

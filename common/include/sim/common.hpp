@@ -98,6 +98,19 @@ constexpr UInt getBitField(UInt value) noexcept {
     return value << left_shift >> (left_shift + lo);
 }
 
+template <BitIdx hi, BitIdx lo, class UInt>
+constexpr UInt setBitField(UInt value, UInt bit_field) noexcept {
+    static_assert(std::is_unsigned_v<UInt>);
+    static_assert(bitSize<UInt>() > hi);
+    static_assert(hi >= lo);
+
+    UInt hi_shift = hi + 1 == bitSize<UInt>() ? 0 : (UInt{1} << (hi + 1));
+    UInt bit_field_mask = hi_shift - (UInt{1} << lo);
+
+    bit_field = (bit_field << lo) & bit_field_mask;
+    return (value & ~bit_field_mask) | bit_field;
+}
+
 // Bits out of range [hi, lo] are zeroed
 template <class UInt, BitIdx hi, BitIdx lo>
 constexpr UInt maskBits(UInt value) noexcept {

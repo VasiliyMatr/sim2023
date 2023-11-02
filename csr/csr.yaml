@@ -1,13 +1,6 @@
 
 satp:
     idx: 0x180
-
-    xlen32:
-        mode:
-            bits: [31, 31]
-            enum: {0: BARE, 1: SV32}
-        asid: [30, 22]
-        ppn: [21, 0]
     xlen64:
         mode:
             bits: [63, 60]
