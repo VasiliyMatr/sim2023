@@ -11,23 +11,23 @@
 namespace sim::csr {
 
 NODISCARD constexpr inline bool isCSRWritable(CSRIdx idx) noexcept {
-    constexpr bit::BitIdx HI = 11;
-    constexpr bit::BitIdx LO = 10;
+    constexpr bit::BitIdx hi = 11;
+    constexpr bit::BitIdx lo = 10;
 
     constexpr uint16_t READ_ONLY_CODE = 0b11;
 
-    return bit::getBitField<uint16_t, HI, LO>(to_underlying(idx)) ==
+    return bit::getBitField<uint16_t>(hi, lo, to_underlying(idx)) ==
            READ_ONLY_CODE;
 }
 
 NODISCARD constexpr inline PrivLevel getCSRPrivLevel(CSRIdx idx) noexcept {
-    constexpr bit::BitIdx HI = 9;
-    constexpr bit::BitIdx LO = 8;
+    constexpr bit::BitIdx hi = 9;
+    constexpr bit::BitIdx lo = 8;
 
     constexpr uint16_t HYPERVISOR_CODE = 0b10;
 
     auto raw_priv_level =
-        bit::getBitField<uint16_t, HI, LO>(to_underlying(idx));
+        bit::getBitField<uint16_t>(hi, lo, to_underlying(idx));
 
     if (raw_priv_level == HYPERVISOR_CODE) {
         return PrivLevel::MACHINE;

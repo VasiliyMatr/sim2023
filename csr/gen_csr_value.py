@@ -100,7 +100,7 @@ class CSRValue:
         out = "void setValue(RawValue raw_value) {\n"
 
         for field in self.fields:
-            get_bit_field = "bit::getBitField<RawValue, %d, %d>(raw_value)" %\
+            get_bit_field = "bit::getBitField(%d, %d, raw_value)" %\
                 (field.hi, field.lo)
 
             if field.is_enum:
@@ -127,7 +127,7 @@ class CSRValue:
             field_value = "static_cast<%s>(%s)" % (field.raw_type, field.m_name) if field.is_enum\
                 else field.m_name
 
-            out += "value = bit::setBitField<%d, %d, RawValue>(value, %s);\n" %\
+            out += "value = bit::setBitField<RawValue>(%d, %d, value, %s);\n" %\
                 (field.hi, field.lo, field_value)
 
         out += "}\n"

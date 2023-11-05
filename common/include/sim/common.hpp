@@ -25,8 +25,7 @@ namespace sim {
 
 using std::size_t;
 
-template<class Enum>
-constexpr auto to_underlying(Enum e) noexcept {
+template <class Enum> constexpr auto to_underlying(Enum e) noexcept {
     return static_cast<std::underlying_type_t<Enum>>(e);
 }
 
@@ -62,6 +61,7 @@ template <class UInt> constexpr BitSize bitSize() noexcept {
 
 // Sign-extend given unsigned integer value from a given bit index.
 // Bits that are higher than the sign bit are ignored.
+// Deprecated
 template <class UInt, BitIdx sign_idx>
 constexpr UInt signExtend(UInt value) noexcept {
     static_assert(std::is_unsigned_v<UInt>);
@@ -74,9 +74,10 @@ constexpr UInt signExtend(UInt value) noexcept {
     return (value ^ sign_mask) - sign_mask;
 }
 
-// Same as constexpr version, but sign index is passed as function argument.
-// Use constexpr version if possible.
-template <class UInt> UInt signExtend(BitIdx sign_idx, UInt value) noexcept {
+// Sign-extend given unsigned integer value from a given bit index.
+// Bits that are higher than the sign bit are ignored.
+template <class UInt>
+constexpr UInt signExtend(BitIdx sign_idx, UInt value) noexcept {
     static_assert(std::is_unsigned_v<UInt>);
     SIM_ASSERT(sign_idx < bitSize<UInt>());
 
@@ -88,6 +89,7 @@ template <class UInt> UInt signExtend(BitIdx sign_idx, UInt value) noexcept {
 }
 
 // Get value of bit field that is stored in range [hi, lo]
+// Deprecated
 template <class UInt, BitIdx hi, BitIdx lo>
 constexpr UInt getBitField(UInt value) noexcept {
     static_assert(std::is_unsigned_v<UInt>);
@@ -98,6 +100,20 @@ constexpr UInt getBitField(UInt value) noexcept {
     return value << left_shift >> (left_shift + lo);
 }
 
+// Get value of bit field that is stored in range [hi, lo]
+template <class UInt>
+constexpr UInt getBitField(BitIdx hi, BitIdx lo, UInt value) noexcept {
+    static_assert(std::is_unsigned_v<UInt>);
+
+    SIM_ASSERT(bitSize<UInt>() > hi);
+    SIM_ASSERT(hi >= lo);
+
+    size_t left_shift = bitSize<UInt>() - hi - 1;
+    return value << left_shift >> (left_shift + lo);
+}
+
+// Set bits [hi, lo]
+// Deprecated
 template <BitIdx hi, BitIdx lo, class UInt>
 constexpr UInt setBitField(UInt value, UInt bit_field) noexcept {
     static_assert(std::is_unsigned_v<UInt>);
@@ -111,7 +127,24 @@ constexpr UInt setBitField(UInt value, UInt bit_field) noexcept {
     return (value & ~bit_field_mask) | bit_field;
 }
 
+// Set bits [hi, lo]
+template <class UInt>
+constexpr UInt setBitField(BitIdx hi, BitIdx lo, UInt value,
+                           UInt bit_field) noexcept {
+    static_assert(std::is_unsigned_v<UInt>);
+
+    SIM_ASSERT(bitSize<UInt>() > hi);
+    SIM_ASSERT(hi >= lo);
+
+    UInt hi_shift = hi + 1 == bitSize<UInt>() ? 0 : (UInt{1} << (hi + 1));
+    UInt bit_field_mask = hi_shift - (UInt{1} << lo);
+
+    bit_field = (bit_field << lo) & bit_field_mask;
+    return (value & ~bit_field_mask) | bit_field;
+}
+
 // Bits out of range [hi, lo] are zeroed
+// Deprecated
 template <class UInt, BitIdx hi, BitIdx lo>
 constexpr UInt maskBits(UInt value) noexcept {
     static_assert(std::is_unsigned_v<UInt>);
@@ -119,6 +152,17 @@ constexpr UInt maskBits(UInt value) noexcept {
     static_assert(hi >= lo);
 
     return getBitField<UInt, hi, lo>(value) << lo;
+}
+
+// Bits out of range [hi, lo] are zeroed
+template <class UInt>
+constexpr UInt maskBits(BitIdx hi, BitIdx lo, UInt value) noexcept {
+    static_assert(std::is_unsigned_v<UInt>);
+
+    SIM_ASSERT(bitSize<UInt>() > hi);
+    SIM_ASSERT(hi >= lo);
+
+    return getBitField<UInt>(value, hi, lo) << lo;
 }
 
 } // namespace bit
