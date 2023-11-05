@@ -106,6 +106,65 @@ struct PhysMemory final {
     }
 };
 
+static constexpr bit::BitSize PAGE_BIT_SIZE = 12;
+static constexpr size_t PAGE_SIZE = 1 << PAGE_BIT_SIZE;
+
+// Physical page number
+using PPN = uint64_t;
+
+// Virtual page number
+using VPN = uint64_t;
+
+// Page Table Entry
+using PTE = uint64_t;
+
+// PTE reserved bits mask.
+// Svnapot and Svpbmt extensions are not supported
+static constexpr PTE PTE_RESERWED_MASK = (PTE{0x3FF} << 54) | (PTE{3} << 8);
+
+struct PTEFlags final {
+    enum FlagsMask : uint8_t {
+        V_MASK = 1 << 0,
+        R_MASK = 1 << 1,
+        W_MASK = 1 << 2,
+        X_MASK = 1 << 3,
+        U_MASK = 1 << 4,
+        G_MASK = 1 << 5,
+        A_MASK = 1 << 6,
+        D_MASK = 1 << 7,
+
+        ALL_MASK = 0x7F,
+    };
+
+  private:
+    uint8_t m_flags = 0;
+
+  public:
+    PTEFlags(uint8_t flags = 0) : m_flags(flags & ALL_MASK) {}
+
+    NODISCARD auto raw() const noexcept { return m_flags; }
+
+    NODISCARD bool v() const noexcept { return m_flags & V_MASK; }
+    NODISCARD bool r() const noexcept { return m_flags & R_MASK; }
+    NODISCARD bool w() const noexcept { return m_flags & W_MASK; }
+    NODISCARD bool x() const noexcept { return m_flags & X_MASK; }
+    NODISCARD bool u() const noexcept { return m_flags & U_MASK; }
+    NODISCARD bool g() const noexcept { return m_flags & G_MASK; }
+    NODISCARD bool a() const noexcept { return m_flags & A_MASK; }
+    NODISCARD bool d() const noexcept { return m_flags & D_MASK; }
+};
+
+// V, A and D are set by default
+NODISCARD inline PTE createValidPTE(PPN ppn, PTEFlags flags) noexcept {
+    static constexpr bit::BitIdx PPN_HI = 53;
+    static constexpr bit::BitIdx PPN_LO = 10;
+
+    static constexpr uint8_t DEFAULT_FLAGS = PTEFlags::V_MASK & PTEFlags::A_MASK & PTEFlags::D_MASK;
+
+    return bit::setBitField<PTE>(PPN_HI, PPN_LO, flags.raw() & DEFAULT_FLAGS, ppn);
+}
+
+// Translates VirtAddr -> PhysAddr in 64-bit mode
 struct MMU64 final {
     enum class AccessType { READ, WRITE, FETCH };
     enum class Status { ACCESS_FAULT, PAGE_FAULT, OK, UNDEF };
@@ -133,7 +192,8 @@ struct MMU64 final {
         : m_phys_memory(phys_memory), m_mstatus64(mstatus64), m_satp64(satp64) {
     }
 
-    NODISCARD Result translate(VirtAddr va, AccessType access_type, PrivLevel priv_level) noexcept;
+    NODISCARD Result translate(PrivLevel priv_level, AccessType access_type,
+                               VirtAddr va) noexcept;
 };
 
 } // namespace memory
