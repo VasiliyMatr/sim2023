@@ -1,3 +1,10 @@
+# Describe CSR registers
+
+mstatus:
+    idx: 0x300
+    xlen64:
+        sum: [18, 18]
+        mxr: [19, 19]
 
 satp:
     idx: 0x180
