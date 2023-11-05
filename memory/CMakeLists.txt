@@ -1,10 +1,13 @@
 # Describe memory module build
 
-add_sim_header_module(memory)
+add_sim_module(memory)
 
 target_link_libraries(memory
-INTERFACE
+PUBLIC
     sim::common
+    sim::csr
 )
+
+target_sources(memory PRIVATE src/mmu64.cpp)
 
 add_subdirectory(tests)
