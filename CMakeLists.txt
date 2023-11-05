@@ -36,6 +36,7 @@ function(add_sim_module MODULE_NAME)
 endfunction(add_sim_module)
 
 add_subdirectory(common)
+add_subdirectory(csr)
 add_subdirectory(gpr)
 add_subdirectory(hart)
 add_subdirectory(instr)
