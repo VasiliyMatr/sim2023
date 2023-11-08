@@ -1,8 +1,10 @@
 import yaml
 import subprocess
+import sys
 
 KNOWN_REGS = ["rd", "rs1", "rs2", "rm"]
 KNOWN_IMMS = [ "imm12", "imm20", "jimm20", "storeimm", "bimm", "shamt", "shamtw"]
+IMMS_NO_EXTEND = ["shamt", "shamtw"]
 
 def GenerateGetBinValue(bit_section: dict) -> str:
     write_buffer = ""
@@ -33,8 +35,8 @@ def GenerateFieldAssigning(inst: dict, field_dict: dict) -> str:
                 write_buffer += GenerateGetBinValue(bit_section)
                 write_buffer += ");\n"
         
-        if field in KNOWN_IMMS and extend_from <= 30:
-            write_buffer += f"m_imm = bit::signExtend<InstrCode ,{extend_from + 1}>(m_imm);\n"
+        if field in KNOWN_IMMS and field not in IMMS_NO_EXTEND and extend_from <= 30:
+            write_buffer += f"m_imm = bit::signExtend<InstrCode ,{extend_from}>(m_imm);\n"
     
     return write_buffer
 
@@ -108,7 +110,10 @@ def GenerateDecoderTree(yaml_dump: dict) -> str:
 
 
 def main():
-    with open("risc-v.yaml") as f:
+    if len(sys.argv) < 2:
+        print("No risc-v.yaml file provided")
+        return
+    with open(sys.argv[1]) as f:
         yaml_dump = dict(yaml.safe_load(f))
 
     write_buffer = "#include <sim/instr.hpp>" "\n"  +\

@@ -40,18 +40,12 @@ TEST(Instr, jal)
     ASSERT_EQ(test.imm(), 34);
 }
 
-TEST(Instr, garbage)
-{
-    Instr test = Instr(static_cast<InstrCode>(0xfffa056f)); //hz, absolutno
-    
-}
-
 TEST(Instr, lui)
 {
     Instr test = Instr(static_cast<InstrCode>(0x0157a2b7)); //lui x5, 5498
     ASSERT_EQ(test.id(), InstrId::LUI);
     ASSERT_EQ(test.rd(), 5);
-    ASSERT_EQ(test.imm(), 5498);
+    ASSERT_EQ(test.imm(), 5498 << 12);
 }
 
 TEST(Instr, beq)
@@ -69,7 +63,7 @@ TEST(Instr, beq_minus)
     ASSERT_EQ(test.id(), InstrId::BEQ);
     ASSERT_EQ(test.rs1(), 3);
     ASSERT_EQ(test.rs2(), 30);
-    ASSERT_EQ(test.imm(), -2);
+    ASSERT_EQ(test.imm(), static_cast<uint32_t>(-2));
 }
 
 TEST(Instr, sraiw)
@@ -79,6 +73,15 @@ TEST(Instr, sraiw)
     ASSERT_EQ(test.rd(), 6);
     ASSERT_EQ(test.rs1(), 1);
     ASSERT_EQ(test.imm(), 30);
+}
+
+
+TEST(Instr, garbage)
+{
+    for (InstrCode code = 0; code <= (1ULL << 32) - 1; code++)
+    {
+        Instr test = Instr(static_cast<InstrCode>(code));
+    }    
 }
 
 } // namespace instr

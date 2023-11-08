@@ -13,4 +13,4 @@ PRIVATE
     sim::instr
 )
 
-target_sources(test_instr PRIVATE src/main.cpp src/test_instr_decoding.cpp ../generated/src/decode.gen.cpp)
+target_sources(test_instr PRIVATE src/main.cpp src/test_instr_decoding.cpp)

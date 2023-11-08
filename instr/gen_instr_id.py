@@ -1,8 +1,13 @@
 import yaml
+import sys
 
 
 def main():
-    with open("./risc-v.yaml") as f:
+    if len(sys.argv) < 2:
+        print("No risc-v.yaml file provided")
+        return
+    
+    with open(sys.argv[1]) as f:
         yaml_dump = dict(yaml.safe_load(f))
 
     write_buffer = "#ifndef INCL_TYPE_GEN_HPP" "\n" +\
