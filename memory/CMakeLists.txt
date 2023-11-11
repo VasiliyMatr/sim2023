@@ -8,6 +8,6 @@ PUBLIC
     sim::csr
 )
 
-target_sources(memory PRIVATE src/mmu64.cpp)
+target_sources(memory PRIVATE src/memory.cpp)
 
 add_subdirectory(tests)
