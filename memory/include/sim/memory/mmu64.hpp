@@ -19,11 +19,13 @@ struct MMU64 final {
         PhysAddr m_phys_addr = 0;
 
       public:
-        Result(Status status, PhysAddr phys_addr)
+        constexpr Result(Status status, PhysAddr phys_addr)
             : m_status(status), m_phys_addr(phys_addr) {}
 
-        NODISCARD auto status() const noexcept { return m_status; }
-        NODISCARD auto physAddr() const noexcept { return m_phys_addr; }
+        NODISCARD constexpr auto status() const noexcept { return m_status; }
+        NODISCARD constexpr auto physAddr() const noexcept {
+            return m_phys_addr;
+        }
     };
 
   private:

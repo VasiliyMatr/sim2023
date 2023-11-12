@@ -56,7 +56,7 @@ struct PTEFlags final {
 static constexpr bit::BitIdx PTE_PPN_HI = 53;
 static constexpr bit::BitIdx PTE_PPN_LO = 10;
 
-NODISCARD inline PTE createPTE(PPN ppn, PTEFlags flags) noexcept {
+NODISCARD constexpr inline PTE createPTE(PPN ppn, PTEFlags flags) noexcept {
     return bit::setBitField<PTE>(PTE_PPN_HI, PTE_PPN_LO, flags.raw(), ppn);
 }
 
