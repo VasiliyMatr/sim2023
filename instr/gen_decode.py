@@ -8,9 +8,9 @@ IMMS_NO_EXTEND = ["shamt", "shamtw"]
 
 def GenerateGetBinValue(bit_section: dict) -> str:
     write_buffer = ""
-    write_buffer += "bit::getBitField<InstrCode,"
+    write_buffer += "bit::getBitField("
     write_buffer += f"{bit_section.get('msb')},"
-    write_buffer += f"{bit_section.get('lsb')}>(instr_code)"
+    write_buffer += f"{bit_section.get('lsb')}, instr_code)"
 
     shift = bit_section.get('to')
     if shift != 0:
@@ -36,7 +36,7 @@ def GenerateFieldAssigning(inst: dict, field_dict: dict) -> str:
                 write_buffer += ");\n"
 
         if field in KNOWN_IMMS and field not in IMMS_NO_EXTEND and extend_from <= 30:
-            write_buffer += f"m_imm = bit::signExtend<InstrCode ,{extend_from}>(m_imm);\n"
+            write_buffer += f"m_imm = bit::signExtend({extend_from}, m_imm);\n"
 
     return write_buffer
 
@@ -57,9 +57,9 @@ def GenerateHandleNode(node_dict : dict, field_dict: dict) -> str:
 
         elif key == "range":
             write_buffer += "switch ("
-            write_buffer += "bit::getBitField<InstrCode,"
+            write_buffer += "bit::getBitField("
             write_buffer += f"{value.get('msb')},"
-            write_buffer += f"{value.get('lsb')}>(instr_code)"
+            write_buffer += f"{value.get('lsb')}, instr_code)"
             write_buffer += ")\n"
 
         elif key == "nodes":
