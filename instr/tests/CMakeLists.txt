@@ -1,3 +1,4 @@
+# Describe instr module tests build
 
 if (NOT GTest_FOUND)
     return()

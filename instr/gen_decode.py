@@ -34,36 +34,12 @@ def GenerateFieldAssigning(inst: dict, field_dict: dict) -> str:
                 extend_from = max(extend_from, bit_section.get('from'))
                 write_buffer += GenerateGetBinValue(bit_section)
                 write_buffer += ");\n"
-        
+
         if field in KNOWN_IMMS and field not in IMMS_NO_EXTEND and extend_from <= 30:
             write_buffer += f"m_imm = bit::signExtend<InstrCode ,{extend_from}>(m_imm);\n"
-    
-    return write_buffer
-
-
-def GenerateSwitchCaseMasks(yaml_dump: dict) -> str:
-    write_buffer = ""
-    masks = dict(dict())
-    for inst in yaml_dump.get("instructions"):
-        if masks.get(inst.get("debug_hex_fixedmask")) == None:
-            masks[inst.get("debug_hex_fixedmask")] = {inst.get("mnemonic"):inst}
-        else:
-            masks[inst.get("debug_hex_fixedmask")][inst.get("mnemonic")] = inst
-
-            
-    for mask, inst_dict in masks.items():
-        write_buffer += f"switch (instr_code & 0x{mask}) {{\n"
-        for inst_name, inst in inst_dict.items():
-            match = inst.get("debug_hex_fixedvalue")
-
-            write_buffer += f"case 0x{match}:\n"
-            write_buffer += GenerateFieldAssigning(inst, yaml_dump.get("fields"))
-            write_buffer += "break;\n"
-
-        write_buffer += "default:\nbreak;\n}\n"
-
 
     return write_buffer
+
 
 def GenerateHandleNode(node_dict : dict, field_dict: dict) -> str:
     write_buffer = ""
@@ -76,12 +52,10 @@ def GenerateHandleNode(node_dict : dict, field_dict: dict) -> str:
                 write_buffer += GenerateHandleNode(value, field_dict)
             elif value.get("mnemonic") is not None:
                 write_buffer += GenerateFieldAssigning(value, field_dict)
-            
+
             write_buffer += "break;\n"
 
-
         elif key == "range":
-            #write_buffer += "std::cout << bit::getBitField<InstrCode, 6, 0>(instr_code) << std::endl;"
             write_buffer += "switch ("
             write_buffer += "bit::getBitField<InstrCode,"
             write_buffer += f"{value.get('msb')},"
@@ -94,7 +68,6 @@ def GenerateHandleNode(node_dict : dict, field_dict: dict) -> str:
             write_buffer += "default:\nbreak;"
             write_buffer += "}\n"
 
-        
         else:
             print("Unknown key:", key)
 
@@ -104,7 +77,6 @@ def GenerateHandleNode(node_dict : dict, field_dict: dict) -> str:
 def GenerateDecoderTree(yaml_dump: dict) -> str:
     write_buffer = ""
     write_buffer += GenerateHandleNode(yaml_dump.get("decodertree"), yaml_dump.get("fields"))
-    
 
     return write_buffer
 
@@ -125,8 +97,7 @@ def main():
         "\n"                                        +\
         "Instr::Instr(InstrCode instr_code) {" "\n"
 
-    #write_buffer += GenerateSwitchCaseMasks(yaml_dump)
-    write_buffer += GenerateDecoderTree(yaml_dump)    
+    write_buffer += GenerateDecoderTree(yaml_dump)
 
     write_buffer += "}\n"
     write_buffer += "}" "\n"
@@ -134,7 +105,7 @@ def main():
 
     with open("decode.gen.cpp", "w+") as f:
         f.write(write_buffer)
-    
+
     subprocess.run("clang-format -i ./decode.gen.cpp", shell=True)
 
 
