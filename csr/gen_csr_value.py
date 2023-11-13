@@ -16,7 +16,7 @@ def gen_raw_field_type(field_len: int) -> str:
     return "uint64_t"
 
 class CSRField:
-    def __init__(self, name: str, field_descr: dict | list):
+    def __init__(self, name: str, field_descr):
         self.name = name.upper()
         self.m_name = "m_%s" % name.lower()
 
