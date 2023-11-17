@@ -1,4 +1,4 @@
-#include <cstdint>
+#include <algorithm>
 #include <random>
 #include <unordered_map>
 
@@ -21,20 +21,29 @@ class PhysMemoryTest : public ::testing::Test {
     static constexpr uint64_t MT_SEED = 1003;
 
     std::mt19937_64 mt{MT_SEED};
+
+    PhysMemory pm{};
+
+    PhysMemoryTest() {
+        for (PhysAddr page_pa = DATA_SEGMENT_BASE_ADDR,
+                      end = DATA_SEGMENT_BASE_ADDR + SIZE_16MB;
+             page_pa != end; page_pa += PAGE_SIZE) {
+
+            SIM_ASSERT(pm.addRAMPage(page_pa));
+        }
+    }
 };
 
 } // namespace
 
 TEST_F(PhysMemoryTest, readWrite) {
-    PhysMemory pm{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
-
     std::unordered_map<PhysAddr, uint64_t> test_cases = {
         {DATA_SEGMENT_BASE_ADDR, mt()},
         {DATA_SEGMENT_BASE_ADDR + 0x1000, mt()},
         {DATA_SEGMENT_BASE_ADDR + SIZE_16MB - sizeof(uint64_t), mt()}};
 
     for (auto &test_case : test_cases) {
-        ASSERT_EQ(pm.write(test_case.first, test_case.second),
+        ASSERT_EQ(pm.write(test_case.first, test_case.second).status,
                   PhysMemory::AccessStatus::OK);
     }
 
@@ -43,122 +52,149 @@ TEST_F(PhysMemoryTest, readWrite) {
         uint64_t value = test_case.second;
 
         uint64_t read_value_64 = 0;
-        ASSERT_EQ(pm.read(pa, read_value_64), PhysMemory::AccessStatus::OK);
+        ASSERT_EQ(pm.read(pa, read_value_64).status,
+                  PhysMemory::AccessStatus::OK);
         ASSERT_EQ(read_value_64, value);
 
         uint32_t read_value_32 = 0;
-        ASSERT_EQ(pm.read(pa, read_value_32), PhysMemory::AccessStatus::OK);
+        ASSERT_EQ(pm.read(pa, read_value_32).status,
+                  PhysMemory::AccessStatus::OK);
         ASSERT_EQ(read_value_32, static_cast<uint32_t>(value));
 
         uint16_t read_value_16 = 0;
-        ASSERT_EQ(pm.read(pa, read_value_16), PhysMemory::AccessStatus::OK);
+        ASSERT_EQ(pm.read(pa, read_value_16).status,
+                  PhysMemory::AccessStatus::OK);
         ASSERT_EQ(read_value_16, static_cast<uint16_t>(value));
 
         uint8_t read_value_8 = 0;
-        ASSERT_EQ(pm.read(pa, read_value_8), PhysMemory::AccessStatus::OK);
+        ASSERT_EQ(pm.read(pa, read_value_8).status,
+                  PhysMemory::AccessStatus::OK);
         ASSERT_EQ(read_value_8, static_cast<uint8_t>(value));
     }
 }
 
-namespace {
+namespace {} // namespace
 
-const std::unordered_map<PhysAddr, const char *> RANGE_ERROR_TEST_CASES = {
-    {0, "Under segment base addr"},
-    {DATA_SEGMENT_BASE_ADDR + SIZE_16MB + 10, "Over segment max addr"},
-    {DATA_SEGMENT_BASE_ADDR + SIZE_16MB - 4, "On segment bound"}};
-
-} // namespace
-
-TEST_F(PhysMemoryTest, rangeErrorReadWrite) {
-    PhysMemory pm{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
+TEST_F(PhysMemoryTest, rangeError) {
+    const std::unordered_map<PhysAddr, const char *> RANGE_ERROR_TEST_CASES = {
+        {0, "Under segment base addr"},
+        {DATA_SEGMENT_BASE_ADDR + SIZE_16MB + 10, "Over segment max addr"}};
 
     for (const auto &test_case : RANGE_ERROR_TEST_CASES) {
         const char *descr = test_case.second;
         PhysAddr pa = test_case.first;
 
-        uint64_t _ = 0;
+        uint64_t dst = 0;
 
-        ASSERT_EQ(pm.read(pa, _), PhysMemory::AccessStatus::RANGE_ERROR)
+        ASSERT_EQ(pm.read(pa, dst).status,
+                  PhysMemory::AccessStatus::RANGE_ERROR)
             << descr;
-        ASSERT_EQ(pm.write(pa, uint64_t{}),
+        ASSERT_EQ(pm.write(pa, uint64_t{}).status,
                   PhysMemory::AccessStatus::RANGE_ERROR)
             << descr;
     }
 }
 
-TEST_F(PhysMemoryTest, rangeErrorHostPtr) {
-    PhysMemory pm{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
+TEST_F(PhysMemoryTest, pageAlignError) {
+    const std::unordered_map<PhysAddr, const char *>
+        PAGE_ALIGN_ERROR_TEST_CASES = {
+            {DATA_SEGMENT_BASE_ADDR + 0x1000 - 4, "On inner page bound"},
+            {DATA_SEGMENT_BASE_ADDR - 4, "On lower segment bound"},
+            {DATA_SEGMENT_BASE_ADDR + SIZE_16MB - 4, "On upper segment bound"}};
 
-    for (const auto &test_case : RANGE_ERROR_TEST_CASES) {
+    for (const auto &test_case : PAGE_ALIGN_ERROR_TEST_CASES) {
         const char *descr = test_case.second;
         PhysAddr pa = test_case.first;
 
-        uint8_t _ = 0;
+        uint64_t dst = 0;
 
-        const uint8_t *const_host_ptr = &_;
-        ASSERT_EQ(pm.getConstHostPtr(pa, 8, const_host_ptr),
-                  PhysMemory::AccessStatus::RANGE_ERROR)
+        ASSERT_EQ(pm.read(pa, dst).status,
+                  PhysMemory::AccessStatus::PAGE_ALIGN_ERROR)
             << descr;
-        ASSERT_EQ(const_host_ptr, nullptr) << descr;
-
-        uint8_t *mute_host_ptr = &_;
-        ASSERT_EQ(pm.getMuteHostPtr(pa, 8, mute_host_ptr),
-                  PhysMemory::AccessStatus::RANGE_ERROR)
+        ASSERT_EQ(pm.write(pa, uint64_t{}).status,
+                  PhysMemory::AccessStatus::PAGE_ALIGN_ERROR)
             << descr;
-        ASSERT_EQ(mute_host_ptr, nullptr) << descr;
     }
 }
 
 TEST_F(PhysMemoryTest, constHostPtr) {
-    PhysMemory pm{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
+    PPN ppn = 1;
+    PhysAddr pa = DATA_SEGMENT_BASE_ADDR + ppn * PAGE_SIZE;
 
-    PhysAddr pa = DATA_SEGMENT_BASE_ADDR + 0x1000;
-    const uint8_t *host_ptr = nullptr;
+    // Check first host page pointer
+    uint8_t byte = 0;
+    auto [status1, host_page_ptr1] = pm.read(pa, byte);
+    ASSERT_EQ(status1, PhysMemory::AccessStatus::OK);
+    ASSERT_TRUE(host_page_ptr1 != nullptr);
+    ASSERT_EQ(host_page_ptr1[0], byte);
 
-    ASSERT_EQ(pm.getConstHostPtr(pa, 2, host_ptr),
-              PhysMemory::AccessStatus::OK);
-    ASSERT_TRUE(host_ptr != nullptr);
+    // Check second host page pointer
+    PhysAddr offset = 0x0ff;
+    auto [status2, host_page_ptr2] = pm.read(pa + offset, byte);
+    ASSERT_EQ(status2, PhysMemory::AccessStatus::OK);
+    ASSERT_TRUE(host_page_ptr2 != nullptr);
+    ASSERT_EQ(host_page_ptr2[offset], byte);
 
-    uint8_t write_value1 = mt();
-    uint8_t write_value2 = mt();
-
-    ASSERT_EQ(pm.write(pa, write_value1), PhysMemory::AccessStatus::OK);
-    ASSERT_EQ(pm.write(pa + 1, write_value2), PhysMemory::AccessStatus::OK);
-    ASSERT_EQ(host_ptr[0], write_value1);
-    ASSERT_EQ(host_ptr[1], write_value2);
+    // Same phys pages => same host pages
+    ASSERT_EQ(host_page_ptr1, host_page_ptr2);
 }
 
-TEST_F(PhysMemoryTest, muteHostPtr) {
-    PhysMemory pm{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
+TEST_F(PhysMemoryTest, hostPtr) {
+    PPN ppn = 1;
+    PhysAddr pa = DATA_SEGMENT_BASE_ADDR + ppn * PAGE_SIZE;
 
-    PhysAddr pa = DATA_SEGMENT_BASE_ADDR + 0x1000;
-    uint8_t *host_ptr = nullptr;
+    // Check first host page pointer
+    uint8_t byte = mt();
+    auto [status1, host_page_ptr1] = pm.write(pa, byte);
+    ASSERT_EQ(status1, PhysMemory::AccessStatus::OK);
+    ASSERT_TRUE(host_page_ptr1 != nullptr);
+    ASSERT_EQ(host_page_ptr1[0], byte);
 
-    ASSERT_EQ(pm.getMuteHostPtr(pa, 2, host_ptr), PhysMemory::AccessStatus::OK);
-    ASSERT_TRUE(host_ptr != nullptr);
+    // Check second host page pointer
+    PhysAddr offset = 0x0ff;
+    byte = mt();
+    auto [status2, host_page_ptr2] = pm.write(pa + offset, byte);
+    ASSERT_EQ(status2, PhysMemory::AccessStatus::OK);
+    ASSERT_TRUE(host_page_ptr2 != nullptr);
+    ASSERT_EQ(host_page_ptr2[offset], byte);
 
-    host_ptr[0] = mt();
-    host_ptr[1] = mt();
-    uint8_t read_value1 = 0;
-    uint8_t read_value2 = 0;
-
-    ASSERT_EQ(pm.read(pa, read_value1), PhysMemory::AccessStatus::OK);
-    ASSERT_EQ(pm.read(pa + 1, read_value2), PhysMemory::AccessStatus::OK);
-    ASSERT_EQ(read_value1, host_ptr[0]);
-    ASSERT_EQ(read_value2, host_ptr[1]);
+    // Same phys pages => same host pages
+    ASSERT_EQ(host_page_ptr1, host_page_ptr2);
 }
 
-TEST_F(PhysMemoryTest, zeroAccessSizeDeath) {
-    PhysMemory pm{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
+TEST_F(PhysMemoryTest, hostPtrCoherency) {
+    PPN ppn = 1;
+    PhysAddr pa = DATA_SEGMENT_BASE_ADDR + ppn * PAGE_SIZE;
 
-    PhysAddr pa = DATA_SEGMENT_BASE_ADDR + 0x1000;
+    // Get host ptr
+    uint8_t byte = mt();
+    auto [status, host_page_ptr] = pm.write(pa, byte);
+    ASSERT_EQ(status, PhysMemory::AccessStatus::OK);
+    ASSERT_TRUE(host_page_ptr != nullptr);
+    ASSERT_EQ(host_page_ptr[0], byte);
 
-    const uint8_t *const_host_ptr = nullptr;
-    ASSERT_DEATH(std::ignore = pm.getConstHostPtr(pa, 0, const_host_ptr),
-                 "access_size > 0");
-    uint8_t *mute_host_ptr = nullptr;
-    ASSERT_DEATH(std::ignore = pm.getMuteHostPtr(pa, 0, mute_host_ptr),
-                 "access_size > 0");
+    std::array<uint8_t, PAGE_SIZE> test_data{};
+
+    // Check pm writes coherency
+    std::for_each(test_data.begin(), test_data.end(),
+                  [this](uint8_t &data) { data = mt(); });
+    for (size_t i = 0; i != PAGE_SIZE; ++i) {
+        ASSERT_EQ(pm.write(pa + i, test_data[i]).status,
+                  PhysMemory::AccessStatus::OK)
+            << i;
+        ASSERT_EQ(test_data[i], host_page_ptr[i]) << i;
+    }
+
+    // Check host writes coherency
+    std::for_each(test_data.begin(), test_data.end(),
+                  [this](uint8_t &data) { data = mt(); });
+    for (size_t i = 0; i != PAGE_SIZE; ++i) {
+        host_page_ptr[i] = test_data[i];
+
+        ASSERT_EQ(pm.read(pa + i, byte).status, PhysMemory::AccessStatus::OK)
+            << i;
+        ASSERT_EQ(byte, host_page_ptr[i]) << i;
+    }
 }
 
 } // namespace memory

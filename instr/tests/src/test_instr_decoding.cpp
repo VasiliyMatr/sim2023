@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sim/common.hpp>
 #include <sim/instr.hpp>
+#include <tuple>
 
 namespace sim {
 namespace instr {
@@ -70,7 +71,7 @@ TEST(Instr, garbage) {
     // Decoder must not crash on any input
     for (uint64_t code = 0, last = std::numeric_limits<InstrCode>::max();
          code <= last; ++code) {
-        Instr test = Instr(static_cast<InstrCode>(code));
+        std::ignore = Instr(static_cast<InstrCode>(code));
     }
 }
 

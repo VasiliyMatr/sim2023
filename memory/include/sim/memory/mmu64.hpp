@@ -1,5 +1,5 @@
-#ifndef INCL_MMU64_HPP
-#define INCL_MMU64_HPP
+#ifndef INCL_MEMORY_MMU64_HPP
+#define INCL_MEMORY_MMU64_HPP
 
 #include <sim/csr/idx.gen.hpp>
 #include <sim/csr/value.gen.hpp>
@@ -45,4 +45,4 @@ struct MMU64 final {
 
 } // namespace sim::memory
 
-#endif // INCL_MMU64_HPP
+#endif // INCL_MEMORY_MMU64_HPP

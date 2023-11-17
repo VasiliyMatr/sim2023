@@ -1,18 +1,23 @@
-#ifndef INCL_SIMPLE_MAPPER_HPP
-#define INCL_SIMPLE_MAPPER_HPP
+#ifndef INCL_MEMORY_SIMPLE_MAPPER_HPP
+#define INCL_MEMORY_SIMPLE_MAPPER_HPP
 
 #include <sim/csr/idx.gen.hpp>
 #include <sim/csr/value.gen.hpp>
 
-#include <sim/memory/pte.hpp>
 #include <sim/memory/phys_memory.hpp>
+#include <sim/memory/pte.hpp>
 
 namespace sim::memory {
 
 struct SimpleMemoryMapper final {
     using Mode = csr::SATP64::MODEValue;
 
-    enum class MapStatus { OK, PHYS_MEMORY_ERROR, ALREADY_MAPPED, TABLE_REGION_END };
+    enum class MapStatus {
+        OK,
+        PHYS_MEMORY_ERROR,
+        ALREADY_MAPPED,
+        TABLE_REGION_END
+    };
 
     class MemoryMapping final {
         static constexpr uint8_t DEFAULT_FLAGS =
@@ -43,8 +48,9 @@ struct SimpleMemoryMapper final {
   public:
     SimpleMemoryMapper(PhysMemory &phys_memory, Mode mode,
                        PPN table_region_begin, PPN table_region_end)
-        : m_phys_memory(phys_memory), m_table_region_begin(table_region_begin),
-          m_mode(mode), m_table_region_end(table_region_end) {
+        : m_phys_memory(phys_memory), m_mode(mode),
+          m_table_region_begin(table_region_begin),
+          m_table_region_end(table_region_end) {
         SIM_ASSERT(table_region_begin < table_region_end);
     }
 
@@ -53,4 +59,4 @@ struct SimpleMemoryMapper final {
 
 } // namespace sim::memory
 
-#endif // INCL_SIMPLE_MAPPER_HPP
+#endif // INCL_MEMORY_SIMPLE_MAPPER_HPP

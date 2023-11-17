@@ -1,105 +1,117 @@
-#ifndef INCL_PHYS_MEMORY_HPP
-#define INCL_PHYS_MEMORY_HPP
+#ifndef INCL_MEMORY_PHYS_MEMORY_HPP
+#define INCL_MEMORY_PHYS_MEMORY_HPP
 
-#include <vector>
+#include <initializer_list>
+#include <memory>
+#include <unordered_map>
 
-#include <sim/common.hpp>
+#include <sim/memory/common.hpp>
 
 namespace sim::memory {
 
-struct PhysMemory final {
-    enum class AccessStatus { OK, RANGE_ERROR };
+using HostPtr = uint8_t *;
+using ConstHostPtr = const uint8_t *;
 
-  private:
-    std::vector<uint8_t> m_data{};
-    PhysAddr m_base_addr = 0;
-
-    NODISCARD auto getAccessStatus(PhysAddr phys_addr,
-                                   size_t access_size) const noexcept {
-        SIM_ASSERT(access_size > 0);
-
-        if (phys_addr < m_base_addr) {
-            return AccessStatus::RANGE_ERROR;
-        }
-
-        auto offset = phys_addr - m_base_addr;
-        if (offset + access_size > m_data.size()) {
-            return AccessStatus::RANGE_ERROR;
-        }
-
-        return AccessStatus::OK;
-    }
+class RAM final {
+    using HostPage = std::array<uint8_t, PAGE_SIZE>;
+    std::unordered_map<PhysAddr, std::unique_ptr<HostPage>> m_ram{};
 
   public:
-    PhysMemory(PhysAddr base_addr, size_t size)
-        : m_base_addr(base_addr), m_data(size) {}
+    NODISCARD bool addPage(PhysAddr page_pa) {
+        SIM_ASSERT(!(page_pa & PAGE_OFFSET_MASK));
 
-    NODISCARD auto baseAddr() const noexcept { return m_base_addr; }
-    NODISCARD auto size() const noexcept { return m_data.size(); }
+        return m_ram.try_emplace(page_pa, std::make_unique<HostPage>()).second;
+    }
 
-    template <class UInt>
-    NODISCARD AccessStatus read(PhysAddr phys_addr, UInt &dst) const noexcept {
+    NODISCARD ConstHostPtr
+    getConstHostPagePtr(PhysAddr page_pa) const noexcept {
+        SIM_ASSERT(!(page_pa & PAGE_OFFSET_MASK));
+
+        auto it = m_ram.find(page_pa);
+        if (it == m_ram.cend()) {
+            return nullptr;
+        }
+
+        return it->second->data();
+    }
+
+    NODISCARD HostPtr getHostPagePtr(PhysAddr page_pa) noexcept {
+        SIM_ASSERT(!(page_pa & PAGE_OFFSET_MASK));
+
+        auto it = m_ram.find(page_pa);
+        if (it == m_ram.end()) {
+            return nullptr;
+        }
+
+        return it->second->data();
+    }
+};
+
+struct PhysMemory final {
+    enum class AccessStatus { OK, RANGE_ERROR, PAGE_ALIGN_ERROR };
+
+  private:
+    RAM m_ram{};
+
+  public:
+    NODISCARD bool addRAMPage(PhysAddr page_pa) {
+        return m_ram.addPage(page_pa);
+    }
+
+    template <class UInt> struct ReadResult final {
         static_assert(std::is_unsigned_v<UInt>);
 
-        if (auto status = getAccessStatus(phys_addr, sizeof(UInt));
-            status != AccessStatus::OK) {
-            return status;
-        }
-
-        auto offset = phys_addr - m_base_addr;
-        dst = *reinterpret_cast<const UInt *>(m_data.data() + offset);
-
-        return AccessStatus::OK;
-    }
+        AccessStatus status;
+        ConstHostPtr host_page_ptr;
+    };
 
     template <class UInt>
-    NODISCARD AccessStatus write(PhysAddr phys_addr, UInt value) {
+    NODISCARD ReadResult<UInt> read(PhysAddr phys_addr,
+                                    UInt &dst) const noexcept {
         static_assert(std::is_unsigned_v<UInt>);
 
-        if (auto status = getAccessStatus(phys_addr, sizeof(UInt));
-            status != AccessStatus::OK) {
-            return status;
+        PhysAddr page_offset = phys_addr & PAGE_OFFSET_MASK;
+        if (page_offset + sizeof(UInt) > PAGE_SIZE) {
+            return {AccessStatus::PAGE_ALIGN_ERROR, nullptr};
         }
 
-        auto offset = phys_addr - m_base_addr;
-        *reinterpret_cast<UInt *>(m_data.data() + offset) = value;
+        PhysAddr page_pa = phys_addr & ~PAGE_OFFSET_MASK;
+        auto host_page_ptr = m_ram.getConstHostPagePtr(page_pa);
+        if (host_page_ptr != nullptr) {
+            dst = *reinterpret_cast<const UInt *>(host_page_ptr + page_offset);
+            return {AccessStatus::OK, host_page_ptr};
+        }
 
-        return AccessStatus::OK;
+        return {AccessStatus::RANGE_ERROR, nullptr};
     }
 
-    NODISCARD AccessStatus
-    getConstHostPtr(PhysAddr phys_addr, size_t access_size,
-                    const uint8_t *&host_ptr) const noexcept {
-        SIM_ASSERT(access_size > 0);
+    template <class UInt> struct WriteResult final {
+        static_assert(std::is_unsigned_v<UInt>);
 
-        if (auto status = getAccessStatus(phys_addr, access_size);
-            status != AccessStatus::OK) {
-            host_ptr = nullptr;
-            return status;
+        AccessStatus status;
+        HostPtr host_page_ptr;
+    };
+
+    template <class UInt>
+    NODISCARD WriteResult<UInt> write(PhysAddr phys_addr, UInt value) {
+        static_assert(std::is_unsigned_v<UInt>);
+
+        PhysAddr page_offset = phys_addr & PAGE_OFFSET_MASK;
+        if (page_offset + sizeof(UInt) > PAGE_SIZE) {
+            return {AccessStatus::PAGE_ALIGN_ERROR, nullptr};
         }
 
-        auto offset = phys_addr - m_base_addr;
-        host_ptr = m_data.data() + offset;
-        return AccessStatus::OK;
-    }
-
-    NODISCARD AccessStatus getMuteHostPtr(PhysAddr phys_addr,
-                                          size_t access_size,
-                                          uint8_t *&host_ptr) noexcept {
-        SIM_ASSERT(access_size > 0);
-
-        if (auto status = getAccessStatus(phys_addr, access_size);
-            status != AccessStatus::OK) {
-            host_ptr = nullptr;
-            return status;
+        PhysAddr page_pa = phys_addr & ~PAGE_OFFSET_MASK;
+        auto host_page_ptr = m_ram.getHostPagePtr(page_pa);
+        if (host_page_ptr != nullptr) {
+            *reinterpret_cast<UInt *>(host_page_ptr + page_offset) = value;
+            return {AccessStatus::OK, host_page_ptr};
         }
 
-        auto offset = phys_addr - m_base_addr;
-        host_ptr = m_data.data() + offset;
-        return AccessStatus::OK;
+        return {AccessStatus::RANGE_ERROR, nullptr};
     }
 };
 
 } // namespace sim::memory
 
-#endif // INCL_PHYS_MEMORY_HPP
+#endif // INCL_MEMORY_PHYS_MEMORY_HPP

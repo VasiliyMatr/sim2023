@@ -1,5 +1,5 @@
-#ifndef INCL_COMMON_HPP
-#define INCL_COMMON_HPP
+#ifndef INCL_SIM_COMMON_HPP
+#define INCL_SIM_COMMON_HPP
 
 #include <climits>
 #include <cstdint>
@@ -121,4 +121,4 @@ constexpr UInt maskBits(BitIdx hi, BitIdx lo, UInt value) noexcept {
 
 } // namespace sim
 
-#endif // INCL_COMMON_HPP
+#endif // INCL_SIM_COMMON_HPP

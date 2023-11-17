@@ -1,5 +1,3 @@
-#include "sim/common.hpp"
-#include "sim/memory/pte.hpp"
 #include <sim/memory.hpp>
 
 namespace sim::memory {
@@ -110,15 +108,16 @@ NODISCARD MMU64::Result MMU64::translate(PrivLevel priv_level,
         // Read next PTE
         PhysAddr pte_pa = table_ppn * PAGE_SIZE + getVPN(va, i) * sizeof(PTE);
 
-        auto status = m_phys_memory.read(pte_pa, pte);
-        if (status != PhysMemory::AccessStatus::OK) {
+        if (m_phys_memory.read(pte_pa, pte).status !=
+            PhysMemory::AccessStatus::OK) {
             return ACCESS_FAULT_RES;
         }
 
         flags = pte;
 
         // Check PTE validity
-        if (flags.v() || (!flags.r() && flags.w()) || (pte & PTE_RESERWED_MASK)) {
+        if (flags.v() || (!flags.r() && flags.w()) ||
+            (pte & PTE_RESERWED_MASK)) {
             return PAGE_FAULT_RES;
         }
 
@@ -132,7 +131,7 @@ NODISCARD MMU64::Result MMU64::translate(PrivLevel priv_level,
             return PAGE_FAULT_RES;
         }
 
-        table_ppn = bit::getBitField<PhysAddr, PTE_PPN_HI, PTE_PPN_LO>(pte);
+        table_ppn = bit::getBitField(PTE_PPN_HI, PTE_PPN_LO, pte);
     }
 
     // Check if the access is allowed
@@ -169,8 +168,8 @@ SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
         PhysAddr pte_pa = table_ppn * PAGE_SIZE + getVPN(va, i) * sizeof(PTE);
 
         PTE pte = 0;
-        auto status = m_phys_memory.read(pte_pa, pte);
-        if (status != PhysMemory::AccessStatus::OK) {
+        if (m_phys_memory.read(pte_pa, pte).status !=
+            PhysMemory::AccessStatus::OK) {
             return MapStatus::PHYS_MEMORY_ERROR;
         }
 
@@ -190,8 +189,8 @@ SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
             }
 
             // Write PTE
-            auto status = m_phys_memory.write(pte_pa, pte);
-            if (status != PhysMemory::AccessStatus::OK) {
+            if (m_phys_memory.write(pte_pa, pte).status !=
+                PhysMemory::AccessStatus::OK) {
                 return MapStatus::PHYS_MEMORY_ERROR;
             }
 
@@ -206,7 +205,7 @@ SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
             return MapStatus::ALREADY_MAPPED;
         }
 
-        table_ppn = bit::getBitField<PhysAddr, PTE_PPN_HI, PTE_PPN_LO>(pte);
+        table_ppn = bit::getBitField(PTE_PPN_HI, PTE_PPN_LO, pte);
     }
 
     return MapStatus::OK;

@@ -1,18 +1,9 @@
-#ifndef INCL_PTE_HPP
-#define INCL_PTE_HPP
+#ifndef INCL_MEMORY_PTE_HPP
+#define INCL_MEMORY_PTE_HPP
 
-#include <sim/common.hpp>
+#include <sim/memory/common.hpp>
 
 namespace sim::memory {
-
-static constexpr bit::BitSize PAGE_BIT_SIZE = 12;
-static constexpr size_t PAGE_SIZE = 1 << PAGE_BIT_SIZE;
-
-// Physical page number
-using PPN = uint64_t;
-
-// Virtual page number
-using VPN = uint64_t;
 
 // Page Table Entry
 using PTE = uint64_t;
@@ -62,4 +53,4 @@ NODISCARD constexpr inline PTE createPTE(PPN ppn, PTEFlags flags) noexcept {
 
 } // namespace sim::memory
 
-#endif // INCL_PTE_HPP
+#endif // INCL_MEMORY_PTE_HPP
