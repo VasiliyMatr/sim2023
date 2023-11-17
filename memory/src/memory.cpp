@@ -1,3 +1,4 @@
+#include "sim/common.hpp"
 #include <sim/memory.hpp>
 
 namespace sim::memory {
@@ -158,6 +159,12 @@ NODISCARD MMU64::Result MMU64::translate(PrivLevel priv_level,
 
 NODISCARD SimpleMemoryMapper::MapStatus
 SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
+    // Mappings for table region pages are forbidden
+    if (mapping.ppn() >= m_table_region_begin &&
+        mapping.ppn() < m_table_region_end) {
+        return MapStatus::MAPPING_WITHIN_TABLE_REGION;
+    }
+
     VirtAddr va = mapping.vpn() * PAGE_SIZE;
 
     size_t i = modeToLevels(m_mode) - 1;

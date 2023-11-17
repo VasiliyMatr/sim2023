@@ -12,20 +12,12 @@ namespace sim::memory {
 // Translates VirtAddr -> PhysAddr in 64-bit mode
 struct MMU64 final {
     enum class AccessType { READ, WRITE, FETCH };
-    enum class Status { ACCESS_FAULT, PAGE_FAULT, OK, UNDEF };
+    enum class Status { OK, ACCESS_FAULT, PAGE_FAULT };
 
-    class Result final {
-        Status m_status = Status::UNDEF;
-        PhysAddr m_phys_addr = 0;
-
-      public:
-        constexpr Result(Status status, PhysAddr phys_addr)
-            : m_status(status), m_phys_addr(phys_addr) {}
-
-        NODISCARD constexpr auto status() const noexcept { return m_status; }
-        NODISCARD constexpr auto physAddr() const noexcept {
-            return m_phys_addr;
-        }
+    // Translation result
+    struct Result final {
+        Status m_status;
+        PhysAddr m_phys_addr;
     };
 
   private:
@@ -39,6 +31,7 @@ struct MMU64 final {
         : m_phys_memory(phys_memory), m_mstatus64(mstatus64), m_satp64(satp64) {
     }
 
+    // Translate VirtAddr -> PhysAddr in 64-bit mode
     NODISCARD Result translate(PrivLevel priv_level, AccessType access_type,
                                VirtAddr va) noexcept;
 };

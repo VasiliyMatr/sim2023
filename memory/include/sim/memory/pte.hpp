@@ -1,6 +1,7 @@
 #ifndef INCL_MEMORY_PTE_HPP
 #define INCL_MEMORY_PTE_HPP
 
+#include "sim/common.hpp"
 #include <sim/memory/common.hpp>
 
 namespace sim::memory {
@@ -12,6 +13,7 @@ using PTE = uint64_t;
 // Svnapot and Svpbmt extensions are not supported
 static constexpr PTE PTE_RESERWED_MASK = (PTE{0x3FF} << 54) | (PTE{3} << 8);
 
+// Page table entry flags
 struct PTEFlags final {
     enum FlagsMask : uint8_t {
         V_MASK = 1 << 0,
@@ -44,11 +46,17 @@ struct PTEFlags final {
     NODISCARD constexpr bool d() const noexcept { return m_flags & D_MASK; }
 };
 
+// PTE PPN field hi bit index
 static constexpr bit::BitIdx PTE_PPN_HI = 53;
+// PTE PPN field lo bit index
 static constexpr bit::BitIdx PTE_PPN_LO = 10;
 
+// Create PTE for given PPN and flags
 NODISCARD constexpr inline PTE createPTE(PPN ppn, PTEFlags flags) noexcept {
-    return bit::setBitField<PTE>(PTE_PPN_HI, PTE_PPN_LO, flags.raw(), ppn);
+    auto pte = bit::setBitField<PTE>(PTE_PPN_HI, PTE_PPN_LO, flags.raw(), ppn);
+    SIM_ASSERT(!(pte & PTE_RESERWED_MASK));
+
+    return pte;
 }
 
 } // namespace sim::memory
