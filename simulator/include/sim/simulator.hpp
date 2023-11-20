@@ -23,8 +23,6 @@ struct Simulator final {
 
   public:
     template<instr::InstrId> SimStatus simInstr(const instr::Instr &instr) noexcept;
-    
-    template <class It> void binLoad(PhysAddr base_addr, It begin, It end);
     SimStatus simulate(PhysAddr start_pc);
 };
 

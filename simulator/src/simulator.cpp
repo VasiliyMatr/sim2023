@@ -8,35 +8,6 @@
 
 namespace sim {
 
-template <class It>
-void Simulator::binLoad(PhysAddr base_addr, It begin, It end) {
-    /*
-    std::ifstream input_file("input_file.bin", std::ios::binary);
-
-    if (!input_file) {
-        std::cerr << "Failed to open the input file." << std::endl;
-        return;
-    }
-
-    input_file.seekg(base_addr.address);
-
-    std::vector<instr::Instr> instruction_set;
-
-    while (begin != end) {
-        InstrCode instr;
-        input_file.read(reinterpret_cast<char*>(&instr), sizeof(uint32_t));
-        if (input_file.eof()) {
-            break;
-        }
-        // Adding instruction to instruction set
-        *begin = instr;
-        ++begin;
-    }
-
-    input_file.close();
-    */
-}
-
 Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
 
     while (start_pc < m_phys_memory.size() * 4) {
