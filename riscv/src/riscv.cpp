@@ -2,9 +2,6 @@
 #include <sim/hart.hpp>
 #include <sim/simulator.hpp>
 #include <sim/instr.hpp>
-
-constexpr sim::PhysAddr DATA_SEGMENT_BASE_ADDR = 0x5000000000;
-constexpr size_t SIZE_16MB = size_t{1} << 24;
 namespace sim {
 
 int Main() {
@@ -17,11 +14,9 @@ int Main() {
         0x0000006f  // return
     };
 
-    auto memory = sim::memory::PhysMemory{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
-    auto hart = sim::hart::Hart{memory};
-    auto sim = sim::Simulator{hart, memory};
-    sim.addInstructionsToMemory(binaryInstructions, memory, binaryInstructions.size());
-    auto status = sim.simulate(DATA_SEGMENT_BASE_ADDR);
+    auto simulator = sim::Simulator();
+    simulator.addInstructionsToMemory(binaryInstructions, binaryInstructions.size());
+    auto status = simulator.simulate(DATA_SEGMENT_BASE_ADDR);
     if (status == sim::Simulator::SimStatus::OK) {
         return 0;
     }

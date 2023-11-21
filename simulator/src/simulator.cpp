@@ -8,23 +8,32 @@
 
 namespace sim {
 
-void Simulator::addInstructionsToMemory(const std::vector<InstrCode>& instructions, memory::PhysMemory &memory, size_t memorySize) {
+hart::Hart &Simulator::getHart() {
+    return m_hart;
+}
 
+void Simulator::addInstructionsToMemory(const std::vector<InstrCode>& instructions, size_t memorySize) {
+
+    auto memory = getHart().physMemory();
+    std::cout << memory.size() << std::endl;
+    std::cout << instructions.size() << std::endl;
     SIM_ASSERT(memory.size() == 0 || instructions.empty());
     SIM_ASSERT(memorySize < instructions.size());
 
     memory::PhysMemory::AccessStatus status;
+    int index = 0;
     for (auto it: instructions) {
-        status = memory.write(it, instructions[it]);
+        status = memory.write(index, instructions[it]);
         if (status == memory::PhysMemory::AccessStatus::RANGE_ERROR) {
             return; // TODO: add normal error 
         }
+        index += 1;
     }
 }
 
 Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
     // m_pc = start_pc;
-    while (start_pc < m_phys_memory.size() * 4) {
+    while (true) {
         // Fetch
         InstrCode instr_code = 0;
         memory::PhysMemory::AccessStatus mem_status = m_phys_memory.read<InstrCode>(start_pc, instr_code); // fetched
@@ -145,12 +154,13 @@ Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
                 break;
             case instr::InstrId::BGEU:
                 status = simInstr<instr::InstrId::BGEU>(instruction);
-               break;
+                break;
             case instr::InstrId::ECALL:
-                
+                return simInstr<instr::InstrId::ECALL>(instruction);
             default:
                 return SimStatus::NOT_IMPLEMENTED_INSTR;
             }
+        
         start_pc += sizeof(InstrCode);
     }
     return SimStatus::OK;

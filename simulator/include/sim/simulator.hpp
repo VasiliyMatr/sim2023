@@ -5,9 +5,10 @@
 #include <sim/hart.hpp>
 #include <sim/memory.hpp>
 #include <sim/instr.hpp>
-
 namespace sim {
 
+constexpr sim::PhysAddr DATA_SEGMENT_BASE_ADDR = 0x5000000000;
+constexpr size_t SIZE_16MB = size_t{1} << 24;
 struct Simulator final {
   public:
     enum class SimStatus {
@@ -18,16 +19,21 @@ struct Simulator final {
     };
 
   private:
-    memory::PhysMemory &m_phys_memory;
+    memory::PhysMemory m_phys_memory{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
 
     hart::Hart m_hart{m_phys_memory};
 
     template<instr::InstrId> SimStatus simInstr(const instr::Instr &instr) noexcept;
 
   public:
-    Simulator(hart::Hart &hart, memory::PhysMemory &memory) : m_hart(hart), m_phys_memory{memory} {};
-    ~Simulator() = default;
-    void addInstructionsToMemory(const std::vector<InstrCode>& instructions, memory::PhysMemory &memory, size_t memorySize);
+    Simulator(memory::PhysMemory &memory, hart::Hart &hart) : m_phys_memory(memory), m_hart(hart) {};
+
+    Simulator() = default;
+  
+    hart::Hart &getHart();
+  
+    void addInstructionsToMemory(const std::vector<InstrCode>& instructions, size_t memorySize);
+  
     SimStatus simulate(PhysAddr start_pc);
 };
 

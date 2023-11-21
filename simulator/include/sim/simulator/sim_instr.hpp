@@ -19,6 +19,10 @@ static constexpr PhysAddr PC_ALIGN_MASK = 0x3;
     Simulator::SimStatus Simulator::simInstr<instr::InstrId::INSTR_NAME>(      \
         const instr::Instr &instr) noexcept
 
+SIM_INSTR(ECALL) {
+    return SimStatus::OK;
+}
+
 SIM_INSTR(ADDIW) {
     auto &gpr = m_hart.gprFile();
     auto word_res = instr.imm() + gpr.read<uint32_t>(instr.rs1());
