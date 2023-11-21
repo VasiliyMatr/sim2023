@@ -9,12 +9,10 @@
 namespace sim {
 
 void Simulator::addInstructionsToMemory(const std::vector<InstrCode>& instructions, memory::PhysMemory &memory, size_t memorySize) {
-    if (memory.size() == 0 || instructions.empty()) {
-        return; // TODO: add normal error 
-    }
-    if (memorySize < instructions.size()) {
-        return; // TODO: add normal error 
-    }
+
+    SIM_ASSERT(memory.size() == 0 || instructions.empty());
+    SIM_ASSERT(memorySize < instructions.size());
+
     memory::PhysMemory::AccessStatus status;
     for (auto it: instructions) {
         status = memory.write(it, instructions[it]);
@@ -25,133 +23,135 @@ void Simulator::addInstructionsToMemory(const std::vector<InstrCode>& instructio
 }
 
 Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
-
+    // m_pc = start_pc;
     while (start_pc < m_phys_memory.size() * 4) {
         // Fetch
         InstrCode instr_code = 0;
         memory::PhysMemory::AccessStatus mem_status = m_phys_memory.read<InstrCode>(start_pc, instr_code); // fetched
         if (mem_status == memory::PhysMemory::AccessStatus::RANGE_ERROR) {
-            return SimStatus::ERROR;
+            return SimStatus::PHYS_MEMORY_ERROR;
         }
 
-        // Create instr from intrcode == Decode
+        // Decode
         instr::Instr instruction{instr_code};
 
         // Execute
-        Simulator::SimStatus status;
+        SimStatus status;
         switch(instruction.id()){
             case instr::InstrId::ADDIW:
-                status = Simulator::simInstr<instr::InstrId::ADDIW>(instruction);
+                status = simInstr<instr::InstrId::ADDIW>(instruction);
                 break;
             case instr::InstrId::SLLI:
-                status = Simulator::simInstr<instr::InstrId::SLLI>(instruction);
+                status = simInstr<instr::InstrId::SLLI>(instruction);
                 break;
             case instr::InstrId::SRLI:
-                status = Simulator::simInstr<instr::InstrId::SRLI>(instruction);
+                status = simInstr<instr::InstrId::SRLI>(instruction);
                 break;
             case instr::InstrId::SRAI:
-                status = Simulator::simInstr<instr::InstrId::SRAI>(instruction);
+                status = simInstr<instr::InstrId::SRAI>(instruction);
                 break;
             case instr::InstrId::SLLIW:
-                status = Simulator::simInstr<instr::InstrId::SLLIW>(instruction);
+                status = simInstr<instr::InstrId::SLLIW>(instruction);
                 break;
             case instr::InstrId::SRLIW:
-                status = Simulator::simInstr<instr::InstrId::SRLIW>(instruction);
+                status = simInstr<instr::InstrId::SRLIW>(instruction);
                 break;
             case instr::InstrId::SRAIW:
-                status = Simulator::simInstr<instr::InstrId::SRAIW>(instruction);
+                status = simInstr<instr::InstrId::SRAIW>(instruction);
                 break;
             case instr::InstrId::LUI:
-                status = Simulator::simInstr<instr::InstrId::LUI>(instruction);
+                status = simInstr<instr::InstrId::LUI>(instruction);
                 break;
             case instr::InstrId::AUIPC:
-                status = Simulator::simInstr<instr::InstrId::AUIPC>(instruction);
+                status = simInstr<instr::InstrId::AUIPC>(instruction);
                 break;
             case instr::InstrId::SLL:
-                status = Simulator::simInstr<instr::InstrId::SLL>(instruction);
+                status = simInstr<instr::InstrId::SLL>(instruction);
                 break;
             case instr::InstrId::SRL:
-                status = Simulator::simInstr<instr::InstrId::SRL>(instruction);
+                status = simInstr<instr::InstrId::SRL>(instruction);
                 break;
             case instr::InstrId::SRA:
-                status = Simulator::simInstr<instr::InstrId::SRA>(instruction);
+                status = simInstr<instr::InstrId::SRA>(instruction);
                 break;
             case instr::InstrId::ADDW:
-                status = Simulator::simInstr<instr::InstrId::ADDW>(instruction);
+                status = simInstr<instr::InstrId::ADDW>(instruction);
                 break;
             case instr::InstrId::SUBW:
-                status = Simulator::simInstr<instr::InstrId::SUBW>(instruction);
+                status = simInstr<instr::InstrId::SUBW>(instruction);
                 break;
             case instr::InstrId::SLLW:
-                status = Simulator::simInstr<instr::InstrId::SLLW>(instruction);
+                status = simInstr<instr::InstrId::SLLW>(instruction);
                 break;
             case instr::InstrId::SRLW:
-                status = Simulator::simInstr<instr::InstrId::SRLW>(instruction);
+                status = simInstr<instr::InstrId::SRLW>(instruction);
                 break;
             case instr::InstrId::SRAW:
-                status = Simulator::simInstr<instr::InstrId::SRAW>(instruction);
+                status = simInstr<instr::InstrId::SRAW>(instruction);
                 break;
             case instr::InstrId::LD:
-                status = Simulator::simInstr<instr::InstrId::LD>(instruction);
+                status = simInstr<instr::InstrId::LD>(instruction);
                 break;
             case instr::InstrId::LW:
-                status = Simulator::simInstr<instr::InstrId::LW>(instruction);
+                status = simInstr<instr::InstrId::LW>(instruction);
                 break;
             case instr::InstrId::LWU:
-                status = Simulator::simInstr<instr::InstrId::LWU>(instruction);
+                status = simInstr<instr::InstrId::LWU>(instruction);
                 break;
             case instr::InstrId::LH:
-                status = Simulator::simInstr<instr::InstrId::LH>(instruction);
+                status = simInstr<instr::InstrId::LH>(instruction);
                 break;
             case instr::InstrId::LHU:
-                status = Simulator::simInstr<instr::InstrId::LHU>(instruction);
+                status = simInstr<instr::InstrId::LHU>(instruction);
                 break;
             case instr::InstrId::LB:
-                status = Simulator::simInstr<instr::InstrId::LB>(instruction);
+                status = simInstr<instr::InstrId::LB>(instruction);
                 break;
             case instr::InstrId::LBU:
-                status = Simulator::simInstr<instr::InstrId::LBU>(instruction);
+                status = simInstr<instr::InstrId::LBU>(instruction);
                 break;
             case instr::InstrId::SD:
-                status = Simulator::simInstr<instr::InstrId::SD>(instruction);
+                status = simInstr<instr::InstrId::SD>(instruction);
                 break;
             case instr::InstrId::SW:
-                status = Simulator::simInstr<instr::InstrId::SW>(instruction);
+                status = simInstr<instr::InstrId::SW>(instruction);
                 break;
             case instr::InstrId::SH:
-                status = Simulator::simInstr<instr::InstrId::SH>(instruction);
+                status = simInstr<instr::InstrId::SH>(instruction);
                 break;
             case instr::InstrId::SB:
-                status = Simulator::simInstr<instr::InstrId::SB>(instruction);
+                status = simInstr<instr::InstrId::SB>(instruction);
                 break;
             case instr::InstrId::JAL:
-                status = Simulator::simInstr<instr::InstrId::JAL>(instruction);
+                status = simInstr<instr::InstrId::JAL>(instruction);
                 break;
             case instr::InstrId::JALR:
-                status = Simulator::simInstr<instr::InstrId::JALR>(instruction);
+                status = simInstr<instr::InstrId::JALR>(instruction);
                 break;
             case instr::InstrId::BEQ:
-                status = Simulator::simInstr<instr::InstrId::BEQ>(instruction);
+                status = simInstr<instr::InstrId::BEQ>(instruction);
                 break;
             case instr::InstrId::BNE:
-                status = Simulator::simInstr<instr::InstrId::BNE>(instruction);
+                status = simInstr<instr::InstrId::BNE>(instruction);
                 break;
             case instr::InstrId::BLT:
-                status = Simulator::simInstr<instr::InstrId::BLT>(instruction);
+                status = simInstr<instr::InstrId::BLT>(instruction);
                 break;
             case instr::InstrId::BLTU:
-                status = Simulator::simInstr<instr::InstrId::BLTU>(instruction);
+                status = simInstr<instr::InstrId::BLTU>(instruction);
                 break;
             case instr::InstrId::BGE:
-                status = Simulator::simInstr<instr::InstrId::BGE>(instruction);
+                status = simInstr<instr::InstrId::BGE>(instruction);
                 break;
             case instr::InstrId::BGEU:
-                status = Simulator::simInstr<instr::InstrId::BGEU>(instruction);
+                status = simInstr<instr::InstrId::BGEU>(instruction);
                break;
+            case instr::InstrId::ECALL:
+                
             default:
                 return SimStatus::NOT_IMPLEMENTED_INSTR;
             }
-        start_pc += 4;
+        start_pc += sizeof(InstrCode);
     }
     return SimStatus::OK;
 }
