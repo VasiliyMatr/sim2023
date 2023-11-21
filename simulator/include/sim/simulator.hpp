@@ -26,6 +26,7 @@ class Simulator final {
   public:
     Simulator(hart::Hart &hart, memory::PhysMemory &memory) : m_hart(hart), m_phys_memory{memory} {};
     ~Simulator() = default;
+    void addInstructionsToMemory(const std::vector<InstrCode>& instructions, memory::PhysMemory &memory, size_t memorySize);
     template<instr::InstrId> SimStatus simInstr(const instr::Instr &instr) noexcept;
     SimStatus simulate(PhysAddr start_pc);
 };

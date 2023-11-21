@@ -8,6 +8,22 @@
 
 namespace sim {
 
+void Simulator::addInstructionsToMemory(const std::vector<InstrCode>& instructions, memory::PhysMemory &memory, size_t memorySize) {
+    if (memory.size() == 0 || instructions.empty()) {
+        return; // TODO: add normal error 
+    }
+    if (memorySize < instructions.size()) {
+        return; // TODO: add normal error 
+    }
+    memory::PhysMemory::AccessStatus status;
+    for (auto it: instructions) {
+        status = memory.write(it, instructions[it]);
+        if (status == memory::PhysMemory::AccessStatus::RANGE_ERROR) {
+            return; // TODO: add normal error 
+        }
+    }
+}
+
 Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
 
     while (start_pc < m_phys_memory.size() * 4) {
