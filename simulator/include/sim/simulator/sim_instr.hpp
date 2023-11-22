@@ -22,7 +22,6 @@ static constexpr PhysAddr PC_ALIGN_MASK = 0x3;
 SIM_INSTR(ECALL) { return SimStatus::EXIT; }
 
 SIM_INSTR(ADDIW) {
-    std::cout << "in addiw" << std::endl;
     auto &gpr = m_hart.gprFile();
     auto word_res = instr.imm() + gpr.read<uint32_t>(instr.rs1());
 
@@ -135,7 +134,6 @@ SIM_INSTR(SRA) {
 }
 
 SIM_INSTR(ADDW) {
-    std::cout << "in addw" << std::endl;
     auto &gpr = m_hart.gprFile();
     auto word_res =
         gpr.read<int32_t>(instr.rs1()) + gpr.read<int32_t>(instr.rs2());
@@ -146,7 +144,6 @@ SIM_INSTR(ADDW) {
 }
 
 SIM_INSTR(SUBW) {
-    std::cout << "in subw" << std::endl;
     auto &gpr = m_hart.gprFile();
     auto word_res =
         gpr.read<int32_t>(instr.rs1()) - gpr.read<int32_t>(instr.rs2());

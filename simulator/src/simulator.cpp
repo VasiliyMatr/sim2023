@@ -12,28 +12,23 @@ hart::Hart &Simulator::getHart() { return m_hart; }
 
 memory::PhysMemory &Simulator::getPhysMemory() { return m_phys_memory; }
 
-void Simulator::loadToMemory(const std::vector<InstrCode> &instructions,
+void Simulator::loadToMemory(const std::vector<InstrCode> &data,
                              PhysAddr start_addr) {
-
-    SIM_ASSERT(m_phys_memory.size() != 0 && !instructions.empty());
-    SIM_ASSERT(instructions.size() >= instructions.size());
-
-    memory::PhysMemory::AccessStatus status;
-    for (size_t index = 0; index < instructions.size(); index++) {
-        status = m_phys_memory.write(index + start_addr, instructions[index]);
-        if (status == memory::PhysMemory::AccessStatus::RANGE_ERROR) {
-            return; // TODO: add normal error
-        }
+    for (size_t i = 0, end = data.size(); i != end; i++) {
+        auto status =
+            m_phys_memory.write(start_addr + i * INSTR_CODE_SIZE, data[i]);
+        SIM_ASSERT(status == memory::PhysMemory::AccessStatus::OK);
     }
 }
 
 Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
     m_hart.pc() = start_pc;
+
     while (true) {
         // Fetch
         InstrCode instr_code = 0;
         memory::PhysMemory::AccessStatus mem_status =
-            m_phys_memory.read<InstrCode>(start_pc, instr_code); // fetched
+            m_phys_memory.read<InstrCode>(m_hart.pc(), instr_code);
         if (mem_status == memory::PhysMemory::AccessStatus::RANGE_ERROR) {
             return SimStatus::PHYS_MEMORY_ERROR;
         }
@@ -42,7 +37,7 @@ Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
         instr::Instr instruction{instr_code};
 
         // Execute
-        SimStatus status;
+        auto status = SimStatus::NOT_IMPLEMENTED_INSTR;
         switch (instruction.id()) {
         case instr::InstrId::ADDIW:
             status = simInstr<instr::InstrId::ADDIW>(instruction);
@@ -163,13 +158,15 @@ Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
         if (status == SimStatus::EXIT) {
             return SimStatus::OK;
         }
+
         if (status != SimStatus::OK) {
             return status;
         }
-        start_pc += sizeof(InstrCode);
-        m_hart.pc() = start_pc;
+
+        m_hart.pc() += sizeof(InstrCode);
     }
-    return SimStatus::OK;
+
+    SIM_ASSERT(0);
 }
 
 } // namespace sim
