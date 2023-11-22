@@ -3,7 +3,7 @@
 add_sim_module(simulator)
 
 target_link_libraries(simulator
-PRIVATE:
+PUBLIC
     sim::common
     sim::hart
     sim::instr

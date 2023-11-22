@@ -43,7 +43,7 @@ struct PhysMemory final {
 
     template <class UInt>
     NODISCARD AccessStatus read(PhysAddr phys_addr, UInt &dst) const noexcept {
-        static_assert(std::is_unsigned_v<UInt>);
+        static_assert(std::is_integral_v<UInt>);
 
         if (auto status = getAccessStatus(phys_addr, sizeof(UInt));
             status != AccessStatus::OK) {
@@ -58,7 +58,7 @@ struct PhysMemory final {
 
     template <class UInt>
     NODISCARD AccessStatus write(PhysAddr phys_addr, UInt value) {
-        static_assert(std::is_unsigned_v<UInt>);
+        static_assert(std::is_integral_v<UInt>);
 
         if (auto status = getAccessStatus(phys_addr, sizeof(UInt));
             status != AccessStatus::OK) {
