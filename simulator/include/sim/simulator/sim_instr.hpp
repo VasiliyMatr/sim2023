@@ -2,11 +2,11 @@
 #define INCL_SIM_INSTR_HPP
 #include <cstdint>
 
-#include <sim/hart.hpp>
-#include <sim/memory.hpp>
 #include <sim/common.hpp>
+#include <sim/hart.hpp>
 #include <sim/instr.hpp>
 #include <sim/instr/instr_id.gen.hpp>
+#include <sim/memory.hpp>
 #include <sim/simulator.hpp>
 
 namespace sim {
@@ -19,17 +19,15 @@ static constexpr PhysAddr PC_ALIGN_MASK = 0x3;
     Simulator::SimStatus Simulator::simInstr<instr::InstrId::INSTR_NAME>(      \
         const instr::Instr &instr) noexcept
 
-SIM_INSTR(ECALL) {
-    return SimStatus::OK;
-}
+SIM_INSTR(ECALL) { return SimStatus::EXIT; }
 
 SIM_INSTR(ADDIW) {
+    std::cout << "in addiw" << std::endl;
     auto &gpr = m_hart.gprFile();
     auto word_res = instr.imm() + gpr.read<uint32_t>(instr.rs1());
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
-    
     return SimStatus::OK;
 }
 
@@ -39,7 +37,6 @@ SIM_INSTR(SLLI) {
 
     gpr.write(instr.rd(), res);
 
-    
     return SimStatus::OK;
 }
 
@@ -49,7 +46,6 @@ SIM_INSTR(SRLI) {
 
     gpr.write(instr.rd(), res);
 
-    
     return SimStatus::OK;
 }
 
@@ -59,7 +55,6 @@ SIM_INSTR(SRAI) {
 
     gpr.write(instr.rd(), res);
 
-    
     return SimStatus::OK;
 }
 
@@ -69,7 +64,6 @@ SIM_INSTR(SLLIW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
-    
     return SimStatus::OK;
 }
 
@@ -79,7 +73,6 @@ SIM_INSTR(SRLIW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
-    
     return SimStatus::OK;
 }
 
@@ -89,7 +82,6 @@ SIM_INSTR(SRAIW) {
 
     gpr.write(instr.rd(), word_res);
 
-    
     return SimStatus::OK;
 }
 
@@ -98,7 +90,6 @@ SIM_INSTR(LUI) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(instr.imm()));
 
-    
     return SimStatus::OK;
 }
 
@@ -108,19 +99,18 @@ SIM_INSTR(AUIPC) {
 
     gpr.write(instr.rd(), res);
 
-    
     return SimStatus::OK;
 }
 
 SIM_INSTR(SLL) {
     auto &gpr = m_hart.gprFile();
-    // auto shift = bit::maskBits<uint8_t, 5, 0>(gpr.read<uint8_t>(instr.rs2()));
+    // auto shift = bit::maskBits<uint8_t, 5,
+    // 0>(gpr.read<uint8_t>(instr.rs2()));
     auto shift = bit::maskBits(5, 0, gpr.read<uint8_t>(instr.rs2()));
     auto res = gpr.read<uint64_t>(instr.rs1()) << shift;
 
     gpr.write(instr.rd(), res);
 
-    
     return SimStatus::OK;
 }
 
@@ -131,7 +121,6 @@ SIM_INSTR(SRL) {
 
     gpr.write(instr.rd(), res);
 
-    
     return SimStatus::OK;
 }
 
@@ -142,29 +131,28 @@ SIM_INSTR(SRA) {
 
     gpr.write(instr.rd(), res);
 
-    
     return SimStatus::OK;
 }
 
 SIM_INSTR(ADDW) {
+    std::cout << "in addw" << std::endl;
     auto &gpr = m_hart.gprFile();
     auto word_res =
         gpr.read<int32_t>(instr.rs1()) + gpr.read<int32_t>(instr.rs2());
 
     gpr.write(instr.rd(), word_res);
 
-    
     return SimStatus::OK;
 }
 
 SIM_INSTR(SUBW) {
+    std::cout << "in subw" << std::endl;
     auto &gpr = m_hart.gprFile();
     auto word_res =
         gpr.read<int32_t>(instr.rs1()) - gpr.read<int32_t>(instr.rs2());
 
     gpr.write(instr.rd(), word_res);
 
-    
     return SimStatus::OK;
 }
 
@@ -175,7 +163,6 @@ SIM_INSTR(SLLW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
-    
     return SimStatus::OK;
 }
 
@@ -186,7 +173,6 @@ SIM_INSTR(SRLW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
-    
     return SimStatus::OK;
 }
 
@@ -197,7 +183,6 @@ SIM_INSTR(SRAW) {
 
     gpr.write(instr.rd(), word_res);
 
-    
     return SimStatus::OK;
 }
 
@@ -215,7 +200,6 @@ SIM_INSTR(LD) {
 
     gpr.write(instr.rd(), res);
 
-    
     return SimStatus::OK;
 }
 
@@ -233,7 +217,6 @@ SIM_INSTR(LW) {
 
     gpr.write(instr.rd(), word_res);
 
-    
     return SimStatus::OK;
 }
 
@@ -251,7 +234,6 @@ SIM_INSTR(LWU) {
 
     gpr.write(instr.rd(), word_res);
 
-    
     return SimStatus::OK;
 }
 
@@ -269,7 +251,6 @@ SIM_INSTR(LH) {
 
     gpr.write(instr.rd(), half_res);
 
-    
     return SimStatus::OK;
 }
 
@@ -287,7 +268,6 @@ SIM_INSTR(LHU) {
 
     gpr.write(instr.rd(), half_res);
 
-    
     return SimStatus::OK;
 }
 
@@ -305,7 +285,6 @@ SIM_INSTR(LB) {
 
     gpr.write(instr.rd(), byte_res);
 
-    
     return SimStatus::OK;
 }
 
@@ -323,7 +302,6 @@ SIM_INSTR(LBU) {
 
     gpr.write(instr.rd(), byte_res);
 
-    
     return SimStatus::OK;
 }
 
@@ -339,7 +317,6 @@ SIM_INSTR(SD) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
 
-    
     return SimStatus::OK;
 }
 
@@ -355,7 +332,6 @@ SIM_INSTR(SW) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
 
-    
     return SimStatus::OK;
 }
 
@@ -371,7 +347,6 @@ SIM_INSTR(SH) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
 
-    
     return SimStatus::OK;
 }
 
@@ -387,7 +362,6 @@ SIM_INSTR(SB) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
 
-    
     return SimStatus::OK;
 }
 

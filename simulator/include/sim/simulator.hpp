@@ -3,37 +3,41 @@
 
 #include <sim/common.hpp>
 #include <sim/hart.hpp>
-#include <sim/memory.hpp>
 #include <sim/instr.hpp>
+#include <sim/memory.hpp>
 namespace sim {
 
-constexpr sim::PhysAddr DATA_SEGMENT_BASE_ADDR = 0x5000000000;
+constexpr sim::PhysAddr PHYS_MEM_BASE_ADDR = 0x5000000000;
 constexpr size_t SIZE_16MB = size_t{1} << 24;
 struct Simulator final {
-  public:
     enum class SimStatus {
         OK,
         NOT_IMPLEMENTED_INSTR,
         PHYS_MEMORY_ERROR,
         PC_ALIGN_ERROR,
+        EXIT,
     };
 
   private:
-    memory::PhysMemory m_phys_memory{DATA_SEGMENT_BASE_ADDR, SIZE_16MB};
+    memory::PhysMemory m_phys_memory{PHYS_MEM_BASE_ADDR, SIZE_16MB};
 
     hart::Hart m_hart{m_phys_memory};
 
-    template<instr::InstrId> SimStatus simInstr(const instr::Instr &instr) noexcept;
+    template <instr::InstrId>
+    SimStatus simInstr(const instr::Instr &instr) noexcept;
 
   public:
-    Simulator(memory::PhysMemory &memory, hart::Hart &hart) : m_phys_memory(memory), m_hart(hart) {};
+    Simulator(memory::PhysMemory &memory, hart::Hart &hart)
+        : m_phys_memory(memory), m_hart(hart){};
 
     Simulator() = default;
-  
+
     hart::Hart &getHart();
-  
-    void addInstructionsToMemory(const std::vector<InstrCode>& instructions, size_t memorySize);
-  
+    memory::PhysMemory &getPhysMemory();
+
+    void loadToMemory(const std::vector<InstrCode> &instructions,
+                      PhysAddr start_addr);
+
     SimStatus simulate(PhysAddr start_pc);
 };
 
