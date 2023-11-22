@@ -1,6 +1,5 @@
-#ifndef INCL_SIM_INSTR_HPP
-#define INCL_SIM_INSTR_HPP
-#include <cstdint>
+#ifndef INCL_SIMULATOR_SIM_INSTR_HPP
+#define INCL_SIMULATOR_SIM_INSTR_HPP
 
 #include <sim/common.hpp>
 #include <sim/hart.hpp>
@@ -476,4 +475,4 @@ SIM_INSTR(BGEU) {
 
 } // namespace sim
 
-#endif // INCL_SIM_INSTR_HPP
+#endif // INCL_SIMULATOR_SIM_INSTR_HPP

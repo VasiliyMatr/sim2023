@@ -1,5 +1,3 @@
-#include "sim/common.hpp"
-#include <cstdint>
 #include <iomanip>
 
 #include <sim/hart.hpp>
@@ -7,7 +5,7 @@
 #include <sim/memory.hpp>
 #include <sim/simulator.hpp>
 
-namespace sim {
+using namespace sim;
 
 namespace {
 
@@ -28,7 +26,7 @@ void dump_gpr_file(const gpr::GPRFile &gpr_file) {
 
 } // namespace
 
-int Main() {
+int main() {
     std::vector<InstrCode> binaryInstructions = {
         0x00a0059b, // addiw a1,x0,10
         0x0140051b, // addiw a0,x0,20
@@ -56,7 +54,3 @@ int Main() {
 
     SIM_ASSERT(0);
 }
-
-} // namespace sim
-
-int main() { return sim::Main(); }

@@ -1,10 +1,11 @@
-#ifndef INCL_SIMULATOR_HPP
-#define INCL_SIMULATOR_HPP
+#ifndef INCL_SIM_SIMULATOR_HPP
+#define INCL_SIM_SIMULATOR_HPP
 
 #include <sim/common.hpp>
 #include <sim/hart.hpp>
 #include <sim/instr.hpp>
 #include <sim/memory.hpp>
+
 namespace sim {
 
 constexpr sim::PhysAddr PHYS_MEM_BASE_ADDR = 0x5000000000;
@@ -43,4 +44,4 @@ struct Simulator final {
 
 } // namespace sim
 
-#endif // INCL_SIMULATOR_HPP
+#endif // INCL_SIM_SIMULATOR_HPP
