@@ -15,11 +15,6 @@ if (NOT GTest_FOUND)
     message(WARNING "GTest package is not found. Tests will not be built.")
 endif ()
 
-find_package(GMock QUIET)
-if (NOT GMock_FOUND)
-    message(WARNING "GMock package is not found.")
-endif ()
-
 # Add header only simulator module library
 function(add_sim_header_module MODULE_NAME)
     add_library(${MODULE_NAME} INTERFACE)

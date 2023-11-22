@@ -2,8 +2,6 @@
 #include <random>
 #include <unordered_map>
 
-// #include <gmock/gmock.h> // TODO: support or erase
-#include <gtest/gtest-spi.h>
 #include <gtest/gtest.h>
 
 #include <sim/common.hpp>
