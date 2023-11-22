@@ -87,7 +87,7 @@ struct PhysMemory final {
     // Read UInt value at given address
     template <class UInt>
     NODISCARD ReadResult read(PhysAddr phys_addr, UInt &dst) const noexcept {
-        static_assert(std::is_unsigned_v<UInt>);
+        static_assert(std::is_integral_v<UInt>);
 
         PhysAddr page_offset = phys_addr & PAGE_OFFSET_MASK;
         if (page_offset + sizeof(UInt) > PAGE_SIZE) {
@@ -114,7 +114,7 @@ struct PhysMemory final {
     // Write UInt value at given address
     template <class UInt>
     NODISCARD WriteResult write(PhysAddr phys_addr, UInt value) {
-        static_assert(std::is_unsigned_v<UInt>);
+        static_assert(std::is_integral_v<UInt>);
 
         PhysAddr page_offset = phys_addr & PAGE_OFFSET_MASK;
         if (page_offset + sizeof(UInt) > PAGE_SIZE) {

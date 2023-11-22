@@ -1,8 +1,5 @@
-#include "sim/memory/common.hpp"
-#include "sim/memory/phys_memory.hpp"
 #include <algorithm>
 #include <random>
-#include <unordered_map>
 
 #include <gtest/gtest.h>
 

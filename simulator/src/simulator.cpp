@@ -4,6 +4,7 @@
 #include <sim/instr.hpp>
 #include <sim/memory.hpp>
 #include <sim/simulator.hpp>
+
 #include <sim/simulator/sim_instr.hpp>
 
 namespace sim {
@@ -12,15 +13,6 @@ hart::Hart &Simulator::getHart() { return m_hart; }
 
 memory::PhysMemory &Simulator::getPhysMemory() { return m_phys_memory; }
 
-void Simulator::loadToMemory(const std::vector<InstrCode> &data,
-                             PhysAddr start_addr) {
-    for (size_t i = 0, end = data.size(); i != end; i++) {
-        auto status =
-            m_phys_memory.write(start_addr + i * INSTR_CODE_SIZE, data[i]);
-        SIM_ASSERT(status == memory::PhysMemory::AccessStatus::OK);
-    }
-}
-
 Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
     m_hart.pc() = start_pc;
 
@@ -28,7 +20,7 @@ Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
         // Fetch
         InstrCode instr_code = 0;
         memory::PhysMemory::AccessStatus mem_status =
-            m_phys_memory.read<InstrCode>(m_hart.pc(), instr_code);
+            m_phys_memory.read<InstrCode>(m_hart.pc(), instr_code).status;
         if (mem_status == memory::PhysMemory::AccessStatus::RANGE_ERROR) {
             return SimStatus::PHYS_MEMORY_ERROR;
         }

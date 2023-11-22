@@ -1,6 +1,8 @@
 #ifndef INCL_SIM_SIMULATOR_HPP
 #define INCL_SIM_SIMULATOR_HPP
 
+#include <vector>
+
 #include <sim/common.hpp>
 #include <sim/hart.hpp>
 #include <sim/instr.hpp>
@@ -20,7 +22,7 @@ struct Simulator final {
     };
 
   private:
-    memory::PhysMemory m_phys_memory{PHYS_MEM_BASE_ADDR, SIZE_16MB};
+    memory::PhysMemory m_phys_memory{};
 
     hart::Hart m_hart{m_phys_memory};
 
@@ -28,16 +30,8 @@ struct Simulator final {
     SimStatus simInstr(const instr::Instr &instr) noexcept;
 
   public:
-    Simulator(memory::PhysMemory &memory, hart::Hart &hart)
-        : m_phys_memory(memory), m_hart(hart){};
-
-    Simulator() = default;
-
     hart::Hart &getHart();
     memory::PhysMemory &getPhysMemory();
-
-    void loadToMemory(const std::vector<InstrCode> &instructions,
-                      PhysAddr start_addr);
 
     SimStatus simulate(PhysAddr start_pc);
 };

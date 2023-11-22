@@ -15,8 +15,9 @@ static constexpr PhysAddr PC_ALIGN_MASK = 0x3;
 
 #define SIM_INSTR(INSTR_NAME)                                                  \
     template <>                                                                \
-    Simulator::SimStatus Simulator::simInstr<instr::InstrId::INSTR_NAME>(      \
-        const instr::Instr &instr) noexcept
+    inline Simulator::SimStatus                                                \
+    Simulator::simInstr<instr::InstrId::INSTR_NAME>(                           \
+        [[maybe_unused]] const instr::Instr &instr) noexcept
 
 SIM_INSTR(ECALL) { return SimStatus::EXIT; }
 
@@ -189,7 +190,7 @@ SIM_INSTR(LD) {
     uint64_t res = 0;
     auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
 
-    auto status = phys_memory.read(phys_addr, res);
+    auto status = phys_memory.read(phys_addr, res).status;
     if (status != memory::PhysMemory::AccessStatus::OK) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
@@ -206,7 +207,7 @@ SIM_INSTR(LW) {
     int32_t word_res = 0;
     auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
 
-    auto status = phys_memory.read(phys_addr, word_res);
+    auto status = phys_memory.read(phys_addr, word_res).status;
     if (status != memory::PhysMemory::AccessStatus::OK) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
@@ -223,7 +224,7 @@ SIM_INSTR(LWU) {
     uint32_t word_res = 0;
     auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
 
-    auto status = phys_memory.read(phys_addr, word_res);
+    auto status = phys_memory.read(phys_addr, word_res).status;
     if (status != memory::PhysMemory::AccessStatus::OK) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
@@ -240,7 +241,7 @@ SIM_INSTR(LH) {
     int16_t half_res = 0;
     auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
 
-    auto status = phys_memory.read(phys_addr, half_res);
+    auto status = phys_memory.read(phys_addr, half_res).status;
     if (status != memory::PhysMemory::AccessStatus::OK) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
@@ -257,7 +258,7 @@ SIM_INSTR(LHU) {
     uint16_t half_res = 0;
     auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
 
-    auto status = phys_memory.read(phys_addr, half_res);
+    auto status = phys_memory.read(phys_addr, half_res).status;
     if (status != memory::PhysMemory::AccessStatus::OK) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
@@ -274,7 +275,7 @@ SIM_INSTR(LB) {
     int8_t byte_res = 0;
     auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
 
-    auto status = phys_memory.read(phys_addr, byte_res);
+    auto status = phys_memory.read(phys_addr, byte_res).status;
     if (status != memory::PhysMemory::AccessStatus::OK) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
@@ -291,7 +292,7 @@ SIM_INSTR(LBU) {
     uint8_t byte_res = 0;
     auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
 
-    auto status = phys_memory.read(phys_addr, byte_res);
+    auto status = phys_memory.read(phys_addr, byte_res).status;
     if (status != memory::PhysMemory::AccessStatus::OK) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
@@ -308,7 +309,7 @@ SIM_INSTR(SD) {
     auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
     auto value = gpr.read<uint64_t>(instr.rs2());
 
-    auto status = phys_memory.write(phys_addr, value);
+    auto status = phys_memory.write(phys_addr, value).status;
     if (status != memory::PhysMemory::AccessStatus::OK) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
@@ -323,7 +324,7 @@ SIM_INSTR(SW) {
     auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
     auto value = gpr.read<uint32_t>(instr.rs2());
 
-    auto status = phys_memory.write(phys_addr, value);
+    auto status = phys_memory.write(phys_addr, value).status;
     if (status != memory::PhysMemory::AccessStatus::OK) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
@@ -338,7 +339,7 @@ SIM_INSTR(SH) {
     auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
     auto value = gpr.read<uint16_t>(instr.rs2());
 
-    auto status = phys_memory.write(phys_addr, value);
+    auto status = phys_memory.write(phys_addr, value).status;
     if (status != memory::PhysMemory::AccessStatus::OK) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
@@ -353,7 +354,7 @@ SIM_INSTR(SB) {
     auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
     auto value = gpr.read<uint8_t>(instr.rs2());
 
-    auto status = phys_memory.write(phys_addr, value);
+    auto status = phys_memory.write(phys_addr, value).status;
     if (status != memory::PhysMemory::AccessStatus::OK) {
         return SimStatus::PHYS_MEMORY_ERROR;
     }
