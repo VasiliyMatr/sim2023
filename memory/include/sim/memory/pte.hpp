@@ -1,7 +1,6 @@
 #ifndef INCL_MEMORY_PTE_HPP
 #define INCL_MEMORY_PTE_HPP
 
-#include "sim/common.hpp"
 #include <sim/memory/common.hpp>
 
 namespace sim::memory {

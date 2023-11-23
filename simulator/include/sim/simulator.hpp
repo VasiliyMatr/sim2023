@@ -1,8 +1,6 @@
 #ifndef INCL_SIM_SIMULATOR_HPP
 #define INCL_SIM_SIMULATOR_HPP
 
-#include <vector>
-
 #include <sim/common.hpp>
 #include <sim/hart.hpp>
 #include <sim/instr.hpp>

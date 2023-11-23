@@ -1,10 +1,6 @@
-#include "sim/common.hpp"
-#include "sim/memory/common.hpp"
-#include "sim/simulator/sim_instr.hpp"
 #include <iomanip>
+#include <vector>
 
-#include <sim/hart.hpp>
-#include <sim/instr.hpp>
 #include <sim/memory.hpp>
 #include <sim/simulator.hpp>
 
@@ -30,9 +26,9 @@ void dump_gpr_file(const gpr::GPRFile &gpr_file) {
 } // namespace
 
 int main() {
-    const PhysAddr code_seg_base = 0x5000000000;
+    const PhysAddr CODE_SEG_BASE = 0x5000000000;
 
-    const std::vector<InstrCode> code = {
+    const std::vector<InstrCode> CODE = {
         0x00a0059b, // addiw a1,x0,10
         0x0140051b, // addiw a0,x0,20
         0x00b5053b, // addw a0,a0,a1
@@ -44,18 +40,18 @@ int main() {
     auto simulator = sim::Simulator();
     auto &phys_memory = simulator.getPhysMemory();
 
-    for (PhysAddr page_pa = code_seg_base, end = code.size() + code_seg_base;
+    for (PhysAddr page_pa = CODE_SEG_BASE, end = CODE.size() + CODE_SEG_BASE;
          page_pa < end; page_pa += memory::PAGE_SIZE) {
         SIM_ASSERT(phys_memory.addRAMPage(page_pa));
     }
 
-    for (size_t i = 0, end = code.size(); i != end; ++i) {
+    for (size_t i = 0, end = CODE.size(); i != end; ++i) {
         SIM_ASSERT(
-            phys_memory.write(code_seg_base + i * INSTR_CODE_SIZE, code[i])
+            phys_memory.write(CODE_SEG_BASE + i * INSTR_CODE_SIZE, CODE[i])
                 .status == memory::PhysMemory::AccessStatus::OK);
     }
 
-    auto status = simulator.simulate(code_seg_base);
+    auto status = simulator.simulate(CODE_SEG_BASE);
 
     std::cout << "GPRs:" << std::endl;
     dump_gpr_file(simulator.getHart().gprFile());

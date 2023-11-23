@@ -201,13 +201,13 @@ SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
                 return MapStatus::PHYS_MEMORY_ERROR;
             }
 
-            // Mapping created
+            // New mapping created
             if (i == 0) {
-                break;
+                return MapStatus::OK;
             }
         }
 
-        // Leaf PTE is already set
+        // Valid leaf PTE is already set
         if (i == 0) {
             return MapStatus::ALREADY_MAPPED;
         }
@@ -215,7 +215,7 @@ SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
         table_ppn = bit::getBitField(PTE_PPN_HI, PTE_PPN_LO, pte);
     }
 
-    return MapStatus::OK;
+    SIM_ASSERT(0);
 }
 
 } // namespace sim::memory

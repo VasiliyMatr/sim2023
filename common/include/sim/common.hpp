@@ -36,6 +36,7 @@ using PhysAddr = RegValue;
 using VirtAddr = RegValue;
 
 using InstrCode = uint32_t;
+static constexpr size_t INSTR_CODE_SIZE = sizeof(InstrCode);
 
 enum class PrivLevel { USER = 0b00, SUPERVISOR = 0b01, MACHINE = 0b11 };
 

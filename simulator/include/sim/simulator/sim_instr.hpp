@@ -10,7 +10,6 @@
 
 namespace sim {
 
-static constexpr size_t INSTR_CODE_SIZE = sizeof(InstrCode);
 static constexpr PhysAddr PC_ALIGN_MASK = 0x3;
 
 #define SIM_INSTR(INSTR_NAME)                                                  \
@@ -412,7 +411,6 @@ Simulator::SimStatus simCondBranch(const instr::Instr &instr, hart::Hart &hart,
         return Simulator::SimStatus::OK;
     }
 
-    hart.pc() += INSTR_CODE_SIZE;
     return Simulator::SimStatus::OK;
 }
 
