@@ -1,5 +1,5 @@
-#ifndef INCL_COMMON_HPP
-#define INCL_COMMON_HPP
+#ifndef INCL_SIM_COMMON_HPP
+#define INCL_SIM_COMMON_HPP
 
 #include <climits>
 #include <cstdint>
@@ -36,6 +36,7 @@ using PhysAddr = RegValue;
 using VirtAddr = RegValue;
 
 using InstrCode = uint32_t;
+static constexpr size_t INSTR_CODE_SIZE = sizeof(InstrCode);
 
 enum class PrivLevel { USER = 0b00, SUPERVISOR = 0b01, MACHINE = 0b11 };
 
@@ -121,4 +122,4 @@ constexpr UInt maskBits(BitIdx hi, BitIdx lo, UInt value) noexcept {
 
 } // namespace sim
 
-#endif // INCL_COMMON_HPP
+#endif // INCL_SIM_COMMON_HPP
