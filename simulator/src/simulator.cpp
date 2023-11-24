@@ -13,23 +13,23 @@ hart::Hart &Simulator::getHart() { return m_hart; }
 
 memory::PhysMemory &Simulator::getPhysMemory() { return m_phys_memory; }
 
-Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
+SimStatus Simulator::simulate(PhysAddr start_pc) {
     m_hart.pc() = start_pc;
 
     while (true) {
         // Fetch
         InstrCode instr_code = 0;
-        memory::PhysMemory::AccessStatus mem_status =
+        auto mem_status =
             m_phys_memory.read<InstrCode>(m_hart.pc(), instr_code).status;
-        if (mem_status == memory::PhysMemory::AccessStatus::RANGE_ERROR) {
-            return SimStatus::PHYS_MEMORY_ERROR;
+        if (mem_status != SimStatus::OK) {
+            return mem_status;
         }
 
         // Decode
         instr::Instr instruction{instr_code};
 
         // Execute
-        auto status = SimStatus::NOT_IMPLEMENTED_INSTR;
+        auto status = SimStatus::SIM__NOT_IMPLEMENTED_INSTR;
         switch (instruction.id()) {
         case instr::InstrId::ADDIW:
             status = simInstr<instr::InstrId::ADDIW>(instruction);
@@ -143,11 +143,11 @@ Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
             status = simInstr<instr::InstrId::ECALL>(instruction);
             break;
         default:
-            status = SimStatus::NOT_IMPLEMENTED_INSTR;
+            status = SimStatus::SIM__NOT_IMPLEMENTED_INSTR;
             break;
         }
 
-        if (status == SimStatus::EXIT) {
+        if (status == SimStatus::SIM__EXIT) {
             return SimStatus::OK;
         }
 
@@ -155,7 +155,7 @@ Simulator::SimStatus Simulator::simulate(PhysAddr start_pc) {
             return status;
         }
 
-        m_hart.pc() += sizeof(InstrCode);
+        m_hart.pc() += INSTR_CODE_SIZE;
     }
 
     SIM_ASSERT(0);

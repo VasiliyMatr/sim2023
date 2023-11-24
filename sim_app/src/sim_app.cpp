@@ -1,3 +1,4 @@
+#include "sim/common.hpp"
 #include <iomanip>
 #include <vector>
 
@@ -48,7 +49,7 @@ int main() {
     for (size_t i = 0, end = CODE.size(); i != end; ++i) {
         SIM_ASSERT(
             phys_memory.write(CODE_SEG_BASE + i * INSTR_CODE_SIZE, CODE[i])
-                .status == memory::PhysMemory::AccessStatus::OK);
+                .status == SimStatus::OK);
     }
 
     auto status = simulator.simulate(CODE_SEG_BASE);
@@ -57,7 +58,7 @@ int main() {
     dump_gpr_file(simulator.getHart().gprFile());
 
     switch (status) {
-    case sim::Simulator::SimStatus::OK:
+    case SimStatus::OK:
         std::cout << "Success!" << std::endl;
         return 0;
     default:

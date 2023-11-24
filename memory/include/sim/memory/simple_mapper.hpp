@@ -1,6 +1,7 @@
 #ifndef INCL_MEMORY_SIMPLE_MAPPER_HPP
 #define INCL_MEMORY_SIMPLE_MAPPER_HPP
 
+#include "sim/common.hpp"
 #include <sim/csr/idx.gen.hpp>
 #include <sim/csr/value.gen.hpp>
 
@@ -12,18 +13,6 @@ namespace sim::memory {
 // Creates translation tables for simple virtual memory mappings
 struct SimpleMemoryMapper final {
     using Mode = csr::SATP64::MODEValue;
-
-    enum class MapStatus {
-        OK,
-        // Error on physical memory access
-        PHYS_MEMORY_ERROR,
-        // Duplicated mapping is detected
-        ALREADY_MAPPED,
-        // Table region end is reached
-        TABLE_REGION_END,
-        // Mapping for table region page is detected
-        MAPPING_WITHIN_TABLE_REGION
-    };
 
     // Virtual memory mapping.
     // A and D flags are set by default
@@ -66,7 +55,7 @@ struct SimpleMemoryMapper final {
     }
 
     // Add PTEs for given mapping
-    NODISCARD MapStatus map(MemoryMapping mapping) noexcept;
+    NODISCARD SimStatus map(MemoryMapping mapping) noexcept;
 };
 
 } // namespace sim::memory

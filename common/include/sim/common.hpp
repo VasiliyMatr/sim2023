@@ -29,6 +29,31 @@ template <class Enum> constexpr auto to_underlying(Enum e) noexcept {
     return static_cast<std::underlying_type_t<Enum>>(e);
 }
 
+// Simulation status codes
+enum class SimStatus {
+    OK,
+
+    // *** csr:: codes ***
+    CSR__NOT_SUPPORTED,
+
+    // *** memory::PhysMemory codes ***
+    PHYS_MEM__PAGE_ALIGN_ERROR,
+    PHYS_MEM__ACCESS_FAULT,
+
+    // *** memory::MMU64 codes ***
+    MMU64__PAGE_FAULT,
+
+    // *** memory::SimpleMemoryMapper codes ***
+    MAPPER__ALREADY_MAPPED,
+    MAPPER__TABLE_REGION_END,
+    MAPPER__TABLE_REGION_PAGE_MAPPED,
+
+    // Simulator codes
+    SIM__EXIT,
+    SIM__NOT_IMPLEMENTED_INSTR,
+    SIM__PC_ALIGN_ERROR
+};
+
 enum class XLen { XLEN_32 = 32, XLEN_64 = 64 };
 
 using RegValue = uint64_t;

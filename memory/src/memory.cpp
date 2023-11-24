@@ -90,13 +90,15 @@ NODISCARD PhysAddr calcPhysAddr(PTE pte, VirtAddr va, size_t i) noexcept {
 NODISCARD MMU64::Result MMU64::translate(PrivLevel priv_level,
                                          AccessType access_type,
                                          VirtAddr va) noexcept {
-    static constexpr MMU64::Result PAGE_FAULT_RES = {Status::PAGE_FAULT, 0};
-    static constexpr MMU64::Result ACCESS_FAULT_RES = {Status::ACCESS_FAULT, 0};
+    static constexpr MMU64::Result PAGE_FAULT_RES = {
+        SimStatus::MMU64__PAGE_FAULT, 0};
+    static constexpr MMU64::Result ACCESS_FAULT_RES = {
+        SimStatus::PHYS_MEM__ACCESS_FAULT, 0};
 
     auto mode = m_satp64.getMODE();
 
     if (mode == Mode::BARE) {
-        return {Status::OK, va};
+        return {SimStatus::OK, va};
     }
 
     size_t i = modeToLevels(mode) - 1;
@@ -109,9 +111,9 @@ NODISCARD MMU64::Result MMU64::translate(PrivLevel priv_level,
         // Read next PTE
         PhysAddr pte_pa = table_ppn * PAGE_SIZE + getVPN(va, i) * sizeof(PTE);
 
-        if (m_phys_memory.read(pte_pa, pte).status !=
-            PhysMemory::AccessStatus::OK) {
-            return ACCESS_FAULT_RES;
+        if (auto s = m_phys_memory.read(pte_pa, pte).status;
+            s != SimStatus::OK) {
+            return {s, 0};
         }
 
         flags = pte;
@@ -154,15 +156,14 @@ NODISCARD MMU64::Result MMU64::translate(PrivLevel priv_level,
     SIM_ASSERT(flags.d() && flags.a());
 
     // The translation is successful
-    return {Status::OK, calcPhysAddr(pte, va, i)};
+    return {SimStatus::OK, calcPhysAddr(pte, va, i)};
 }
 
-NODISCARD SimpleMemoryMapper::MapStatus
-SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
+NODISCARD SimStatus SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
     // Mappings for table region pages are forbidden
     if (mapping.ppn() >= m_table_region_begin &&
         mapping.ppn() < m_table_region_end) {
-        return MapStatus::MAPPING_WITHIN_TABLE_REGION;
+        return SimStatus::MAPPER__TABLE_REGION_PAGE_MAPPED;
     }
 
     VirtAddr va = mapping.vpn() * PAGE_SIZE;
@@ -175,9 +176,9 @@ SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
         PhysAddr pte_pa = table_ppn * PAGE_SIZE + getVPN(va, i) * sizeof(PTE);
 
         PTE pte = 0;
-        if (m_phys_memory.read(pte_pa, pte).status !=
-            PhysMemory::AccessStatus::OK) {
-            return MapStatus::PHYS_MEMORY_ERROR;
+        if (auto s = m_phys_memory.read(pte_pa, pte).status;
+            s != SimStatus::OK) {
+            return s;
         }
 
         // Read PTE is not valid => add new PTE
@@ -185,7 +186,7 @@ SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
             if (i != 0) {
                 // Add new page table
                 if (m_curr_table == m_table_region_end) {
-                    return MapStatus::TABLE_REGION_END;
+                    return SimStatus::MAPPER__TABLE_REGION_END;
                 }
 
                 PPN new_table = m_curr_table++;
@@ -196,20 +197,20 @@ SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
             }
 
             // Write PTE
-            if (m_phys_memory.write(pte_pa, pte).status !=
-                PhysMemory::AccessStatus::OK) {
-                return MapStatus::PHYS_MEMORY_ERROR;
+            if (auto s = m_phys_memory.write(pte_pa, pte).status;
+                s != SimStatus::OK) {
+                return s;
             }
 
             // New mapping created
             if (i == 0) {
-                return MapStatus::OK;
+                return SimStatus::OK;
             }
         }
 
         // Valid leaf PTE is already set
         if (i == 0) {
-            return MapStatus::ALREADY_MAPPED;
+            return SimStatus::MAPPER__ALREADY_MAPPED;
         }
 
         table_ppn = bit::getBitField(PTE_PPN_HI, PTE_PPN_LO, pte);

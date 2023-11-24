@@ -8,18 +8,7 @@
 
 namespace sim {
 
-constexpr sim::PhysAddr PHYS_MEM_BASE_ADDR = 0x5000000000;
-constexpr size_t SIZE_16MB = size_t{1} << 24;
-struct Simulator final {
-    enum class SimStatus {
-        OK,
-        NOT_IMPLEMENTED_INSTR,
-        PHYS_MEMORY_ERROR,
-        PC_ALIGN_ERROR,
-        EXIT,
-    };
-
-  private:
+class Simulator final {
     memory::PhysMemory m_phys_memory{};
 
     hart::Hart m_hart{m_phys_memory};

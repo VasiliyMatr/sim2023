@@ -1,5 +1,5 @@
-#ifndef INCL_CSR_HPP
-#define INCL_CSR_HPP
+#ifndef INCL_SIM_CSR_HPP
+#define INCL_SIM_CSR_HPP
 
 #include <array>
 
@@ -36,30 +36,15 @@ NODISCARD constexpr inline PrivLevel getCSRPrivLevel(CSRIdx idx) noexcept {
     return PrivLevel{raw_priv_level};
 }
 
-struct CSRFile final {
-    enum class AccessStatus { OK, CSR_NOT_SUPPORTED };
-
-  private:
+class CSRFile final {
     CSRValue<XLen::XLEN_64, CSRIdx::SATP> m_satp64{};
 
   public:
     template <XLen xlen>
-    NODISCARD AccessStatus read(CSRIdx idx,
-                                RawCSRValue<xlen> &dst) const noexcept {
-        switch (idx) {
-        case CSRIdx::SATP:
-            dst = get<xlen, CSRIdx::SATP>().getValue();
-            break;
-
-        default:
-            return AccessStatus::CSR_NOT_SUPPORTED;
-        }
-
-        return AccessStatus::OK;
-    }
+    NODISCARD SimStatus read(CSRIdx idx, RawCSRValue<xlen> &dst) const noexcept;
 
     template <XLen xlen>
-    NODISCARD AccessStatus write(CSRIdx idx, RawCSRValue<xlen> value) noexcept;
+    NODISCARD SimStatus write(CSRIdx idx, RawCSRValue<xlen> value) noexcept;
 
     template <XLen xlen, CSRIdx idx>
     NODISCARD const CSRValue<xlen, idx> &get() const noexcept;
@@ -70,4 +55,4 @@ struct CSRFile final {
 
 } // namespace sim::csr
 
-#endif // INCL_CSR_HPP
+#endif // INCL_SIM_CSR_HPP

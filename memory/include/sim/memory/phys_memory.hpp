@@ -1,7 +1,6 @@
 #ifndef INCL_MEMORY_PHYS_MEMORY_HPP
 #define INCL_MEMORY_PHYS_MEMORY_HPP
 
-#include <initializer_list>
 #include <memory>
 #include <unordered_map>
 
@@ -57,18 +56,7 @@ class RAM final {
 // - Mapping additions
 // - Read/write
 // - Accessed host pages addresses forwarding (when present)
-struct PhysMemory final {
-    // Physical memory access status
-    enum class AccessStatus {
-        // Successful access
-        OK,
-        // Unmapped range accessed
-        RANGE_ERROR,
-        // Access on physical pages boundary
-        PAGE_ALIGN_ERROR
-    };
-
-  private:
+class PhysMemory final {
     RAM m_ram{};
 
   public:
@@ -79,9 +67,9 @@ struct PhysMemory final {
 
     // Physical memory read access result
     struct ReadResult final {
-        AccessStatus status;
+        SimStatus status = SimStatus::PHYS_MEM__ACCESS_FAULT;
         // Accessed host page address (when present) or nullptr
-        ConstHostPtr host_page_ptr;
+        ConstHostPtr host_page_ptr = nullptr;
     };
 
     // Read UInt value at given address
@@ -91,24 +79,24 @@ struct PhysMemory final {
 
         PhysAddr page_offset = phys_addr & PAGE_OFFSET_MASK;
         if (page_offset + sizeof(UInt) > PAGE_SIZE) {
-            return {AccessStatus::PAGE_ALIGN_ERROR, nullptr};
+            return {SimStatus::PHYS_MEM__PAGE_ALIGN_ERROR, nullptr};
         }
 
         PhysAddr page_pa = phys_addr & ~PAGE_OFFSET_MASK;
         auto host_page_ptr = m_ram.getConstHostPagePtr(page_pa);
         if (host_page_ptr != nullptr) {
             dst = *reinterpret_cast<const UInt *>(host_page_ptr + page_offset);
-            return {AccessStatus::OK, host_page_ptr};
+            return {SimStatus::OK, host_page_ptr};
         }
 
-        return {AccessStatus::RANGE_ERROR, nullptr};
+        return {SimStatus::PHYS_MEM__ACCESS_FAULT, nullptr};
     }
 
     // Physical memory write access result
     struct WriteResult final {
-        AccessStatus status;
+        SimStatus status = SimStatus::PHYS_MEM__ACCESS_FAULT;
         // Accessed host page address (when present) or nullptr
-        HostPtr host_page_ptr;
+        HostPtr host_page_ptr = nullptr;
     };
 
     // Write UInt value at given address
@@ -118,17 +106,17 @@ struct PhysMemory final {
 
         PhysAddr page_offset = phys_addr & PAGE_OFFSET_MASK;
         if (page_offset + sizeof(UInt) > PAGE_SIZE) {
-            return {AccessStatus::PAGE_ALIGN_ERROR, nullptr};
+            return {SimStatus::PHYS_MEM__PAGE_ALIGN_ERROR, nullptr};
         }
 
         PhysAddr page_pa = phys_addr & ~PAGE_OFFSET_MASK;
         auto host_page_ptr = m_ram.getHostPagePtr(page_pa);
         if (host_page_ptr != nullptr) {
             *reinterpret_cast<UInt *>(host_page_ptr + page_offset) = value;
-            return {AccessStatus::OK, host_page_ptr};
+            return {SimStatus::OK, host_page_ptr};
         }
 
-        return {AccessStatus::RANGE_ERROR, nullptr};
+        return {SimStatus::PHYS_MEM__ACCESS_FAULT, nullptr};
     }
 };
 

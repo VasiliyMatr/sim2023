@@ -27,7 +27,7 @@ class Instr final {
     NODISCARD auto imm() const noexcept { return m_imm; }
     NODISCARD auto rm() const noexcept { return m_rm; }
 
-    Instr() = delete;
+    Instr() = default;
     Instr(const Instr &) = default;
     Instr &operator=(const Instr &) = default;
 
