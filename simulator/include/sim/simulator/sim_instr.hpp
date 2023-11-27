@@ -10,7 +10,7 @@
 
 namespace sim {
 
-static constexpr PhysAddr PC_ALIGN_MASK = 0x3;
+static constexpr VirtAddr PC_ALIGN_MASK = 0x3;
 
 #define SIM_INSTR(INSTR_NAME)                                                  \
     template <>                                                                \
@@ -181,184 +181,19 @@ SIM_INSTR(SRAW) {
     return SimStatus::OK;
 }
 
-SIM_INSTR(LD) {
-    auto &gpr = m_hart.gprFile();
-    auto &phys_memory = m_hart.physMemory();
+SIM_INSTR(LD) { return simLoadInstr<int64_t>(instr); }
+SIM_INSTR(LW) { return simLoadInstr<int32_t>(instr); }
+SIM_INSTR(LH) { return simLoadInstr<int16_t>(instr); }
+SIM_INSTR(LB) { return simLoadInstr<int8_t>(instr); }
 
-    uint64_t res = 0;
-    auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
+SIM_INSTR(LWU) { return simLoadInstr<uint32_t>(instr); }
+SIM_INSTR(LHU) { return simLoadInstr<uint16_t>(instr); }
+SIM_INSTR(LBU) { return simLoadInstr<uint8_t>(instr); }
 
-    auto status = phys_memory.read(phys_addr, res).status;
-    if (status != SimStatus::OK) {
-        return status;
-    }
-
-    gpr.write(instr.rd(), res);
-
-    return SimStatus::OK;
-}
-
-SIM_INSTR(LW) {
-    auto &gpr = m_hart.gprFile();
-    auto &phys_memory = m_hart.physMemory();
-
-    int32_t word_res = 0;
-    auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
-
-    auto status = phys_memory.read(phys_addr, word_res).status;
-    if (status != SimStatus::OK) {
-        return status;
-    }
-
-    gpr.write(instr.rd(), word_res);
-
-    return SimStatus::OK;
-}
-
-SIM_INSTR(LWU) {
-    auto &gpr = m_hart.gprFile();
-    auto &phys_memory = m_hart.physMemory();
-
-    uint32_t word_res = 0;
-    auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
-
-    auto status = phys_memory.read(phys_addr, word_res).status;
-    if (status != SimStatus::OK) {
-        return status;
-    }
-
-    gpr.write(instr.rd(), word_res);
-
-    return SimStatus::OK;
-}
-
-SIM_INSTR(LH) {
-    auto &gpr = m_hart.gprFile();
-    auto &phys_memory = m_hart.physMemory();
-
-    int16_t half_res = 0;
-    auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
-
-    auto status = phys_memory.read(phys_addr, half_res).status;
-    if (status != SimStatus::OK) {
-        return status;
-    }
-
-    gpr.write(instr.rd(), half_res);
-
-    return SimStatus::OK;
-}
-
-SIM_INSTR(LHU) {
-    auto &gpr = m_hart.gprFile();
-    auto &phys_memory = m_hart.physMemory();
-
-    uint16_t half_res = 0;
-    auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
-
-    auto status = phys_memory.read(phys_addr, half_res).status;
-    if (status != SimStatus::OK) {
-        return status;
-    }
-
-    gpr.write(instr.rd(), half_res);
-
-    return SimStatus::OK;
-}
-
-SIM_INSTR(LB) {
-    auto &gpr = m_hart.gprFile();
-    auto &phys_memory = m_hart.physMemory();
-
-    int8_t byte_res = 0;
-    auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
-
-    auto status = phys_memory.read(phys_addr, byte_res).status;
-    if (status != SimStatus::OK) {
-        return status;
-    }
-
-    gpr.write(instr.rd(), byte_res);
-
-    return SimStatus::OK;
-}
-
-SIM_INSTR(LBU) {
-    auto &gpr = m_hart.gprFile();
-    auto &phys_memory = m_hart.physMemory();
-
-    uint8_t byte_res = 0;
-    auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
-
-    auto status = phys_memory.read(phys_addr, byte_res).status;
-    if (status != SimStatus::OK) {
-        return status;
-    }
-
-    gpr.write(instr.rd(), byte_res);
-
-    return SimStatus::OK;
-}
-
-SIM_INSTR(SD) {
-    auto &gpr = m_hart.gprFile();
-    auto &phys_memory = m_hart.physMemory();
-
-    auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
-    auto value = gpr.read<uint64_t>(instr.rs2());
-
-    auto status = phys_memory.write(phys_addr, value).status;
-    if (status != SimStatus::OK) {
-        return status;
-    }
-
-    return SimStatus::OK;
-}
-
-SIM_INSTR(SW) {
-    auto &gpr = m_hart.gprFile();
-    auto &phys_memory = m_hart.physMemory();
-
-    auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
-    auto value = gpr.read<uint32_t>(instr.rs2());
-
-    auto status = phys_memory.write(phys_addr, value).status;
-    if (status != SimStatus::OK) {
-        return status;
-    }
-
-    return SimStatus::OK;
-}
-
-SIM_INSTR(SH) {
-    auto &gpr = m_hart.gprFile();
-    auto &phys_memory = m_hart.physMemory();
-
-    auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
-    auto value = gpr.read<uint16_t>(instr.rs2());
-
-    auto status = phys_memory.write(phys_addr, value).status;
-    if (status != SimStatus::OK) {
-        return status;
-    }
-
-    return SimStatus::OK;
-}
-
-SIM_INSTR(SB) {
-    auto &gpr = m_hart.gprFile();
-    auto &phys_memory = m_hart.physMemory();
-
-    auto phys_addr = gpr.read<PhysAddr>(instr.rs1());
-    auto value = gpr.read<uint8_t>(instr.rs2());
-
-    auto status = phys_memory.write(phys_addr, value).status;
-    if (status != SimStatus::OK) {
-        return status;
-    }
-
-    return SimStatus::OK;
-}
+SIM_INSTR(SD) { return simStoreInstr<uint64_t>(instr); }
+SIM_INSTR(SW) { return simStoreInstr<uint32_t>(instr); }
+SIM_INSTR(SH) { return simStoreInstr<uint16_t>(instr); }
+SIM_INSTR(SB) { return simStoreInstr<uint8_t>(instr); }
 
 SIM_INSTR(JAL) {
     auto &gpr = m_hart.gprFile();

@@ -37,7 +37,8 @@ NODISCARD constexpr inline PrivLevel getCSRPrivLevel(CSRIdx idx) noexcept {
 }
 
 class CSRFile final {
-    CSRValue<XLen::XLEN_64, CSRIdx::SATP> m_satp64{};
+    SATP64 m_satp64{};
+    MSTATUS64 m_mstatus64{};
 
   public:
     template <XLen xlen>

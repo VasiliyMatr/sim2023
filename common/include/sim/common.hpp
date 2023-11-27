@@ -51,7 +51,9 @@ enum class SimStatus {
     // Simulator codes
     SIM__EXIT,
     SIM__NOT_IMPLEMENTED_INSTR,
-    SIM__PC_ALIGN_ERROR
+    SIM__PC_ALIGN_ERROR,
+    SIM__UNALIGNED_LOAD,
+    SIM__UNALIGNED_STORE,
 };
 
 enum class XLen { XLEN_32 = 32, XLEN_64 = 64 };
@@ -73,16 +75,16 @@ using BitSize = size_t;
 static constexpr size_t BYTE_SIZE = 8;
 static_assert(CHAR_BIT == BYTE_SIZE);
 
-// Return ones mask for given unsigned integer type
-template <class UInt> constexpr UInt onesMask() noexcept {
-    static_assert(std::is_unsigned_v<UInt>);
-    return UInt{0} - 1;
+// Return ones mask for given integer type
+template <class Int> constexpr Int onesMask() noexcept {
+    static_assert(std::is_integral_v<Int>);
+    return -1;
 }
 
-// Return given unsigned integer type size in bits
-template <class UInt> constexpr BitSize bitSize() noexcept {
-    static_assert(std::is_unsigned_v<UInt>);
-    return sizeof(UInt) * BYTE_SIZE;
+// Return given integer type size in bits
+template <class Int> constexpr BitSize bitSize() noexcept {
+    static_assert(std::is_integral_v<Int>);
+    return sizeof(Int) * BYTE_SIZE;
 }
 
 // Sign-extend given unsigned integer value from a given bit index.

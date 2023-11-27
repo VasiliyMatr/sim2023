@@ -92,8 +92,6 @@ NODISCARD MMU64::Result MMU64::translate(PrivLevel priv_level,
                                          VirtAddr va) noexcept {
     static constexpr MMU64::Result PAGE_FAULT_RES = {
         SimStatus::MMU64__PAGE_FAULT, 0};
-    static constexpr MMU64::Result ACCESS_FAULT_RES = {
-        SimStatus::PHYS_MEM__ACCESS_FAULT, 0};
 
     auto mode = m_satp64.getMODE();
 

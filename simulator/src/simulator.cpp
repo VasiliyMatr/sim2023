@@ -13,16 +13,15 @@ hart::Hart &Simulator::getHart() { return m_hart; }
 
 memory::PhysMemory &Simulator::getPhysMemory() { return m_phys_memory; }
 
-SimStatus Simulator::simulate(PhysAddr start_pc) {
+SimStatus Simulator::simulate(VirtAddr start_pc) {
     m_hart.pc() = start_pc;
 
     while (true) {
         // Fetch
-        InstrCode instr_code = 0;
-        auto mem_status =
-            m_phys_memory.read<InstrCode>(m_hart.pc(), instr_code).status;
-        if (mem_status != SimStatus::OK) {
-            return mem_status;
+        auto [fetch_status, instr_code] =
+            loadInt<InstrCode, MemAccessType::FETCH>(m_hart.pc());
+        if (fetch_status != SimStatus::OK) {
+            return fetch_status;
         }
 
         // Decode
