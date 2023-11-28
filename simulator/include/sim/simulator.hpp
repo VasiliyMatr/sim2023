@@ -3,6 +3,7 @@
 
 #include <type_traits>
 
+#include <sim/bb.hpp>
 #include <sim/common.hpp>
 #include <sim/hart.hpp>
 #include <sim/instr.hpp>
@@ -16,6 +17,8 @@ class Simulator final {
     memory::PhysMemory m_phys_memory{};
 
     hart::Hart m_hart{m_phys_memory};
+
+    size_t m_icount = 0;
 
     // Translate VA -> PA in current privilege level
     template <MemAccessType access_type> auto translateVa(VirtAddr va) {
@@ -69,6 +72,9 @@ class Simulator final {
         }
 
         gpr.write(instr.rd(), res);
+
+        ++m_icount;
+        m_hart.pc() += INSTR_CODE_SIZE;
         return SimStatus::OK;
     }
 
@@ -103,15 +109,45 @@ class Simulator final {
 
         auto value = gpr.read<UInt>(instr.rs2());
 
-        return storeInt(va, value);
+        auto status = storeInt(va, value);
+
+        if (status == SimStatus::OK) {
+            ++m_icount;
+            m_hart.pc() += INSTR_CODE_SIZE;
+        }
+
+        return status;
     }
 
     template <instr::InstrId>
     SimStatus simInstr(const instr::Instr &instr) noexcept;
 
+    SimStatus simBb(const bb::Bb &bb) noexcept;
+
+    class Fetch final {
+        using FetchResult = bb::Bb::FetchResult;
+
+        VirtAddr m_curr_fetch_addr = 0;
+        Simulator &m_sim;
+
+      public:
+        Fetch(VirtAddr bb_virt_addr, Simulator &sim)
+            : m_curr_fetch_addr(bb_virt_addr), m_sim(sim) {}
+
+        FetchResult operator()() noexcept {
+            auto res = m_sim.loadInt<InstrCode, MemAccessType::FETCH>(
+                m_curr_fetch_addr);
+
+            m_curr_fetch_addr += INSTR_CODE_SIZE;
+            return {res.status, res.value};
+        }
+    };
+
   public:
-    hart::Hart &getHart();
-    memory::PhysMemory &getPhysMemory();
+    auto &getHart() noexcept { return m_hart; }
+    auto &getPhysMemory() noexcept { return m_phys_memory; }
+
+    auto icount() const noexcept { return m_icount; }
 
     SimStatus simulate(VirtAddr start_pc);
 };

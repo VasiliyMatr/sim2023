@@ -17,7 +17,10 @@ static constexpr VirtAddr PC_ALIGN_MASK = 0x3;
     inline SimStatus Simulator::simInstr<instr::InstrId::INSTR_NAME>(          \
         [[maybe_unused]] const instr::Instr &instr) noexcept
 
-SIM_INSTR(ECALL) { return SimStatus::SIM__EXIT; }
+SIM_INSTR(ECALL) {
+    m_hart.pc() += INSTR_CODE_SIZE;
+    return SimStatus::SIM__EXIT;
+}
 
 SIM_INSTR(ADDIW) {
     auto &gpr = m_hart.gprFile();
@@ -25,6 +28,7 @@ SIM_INSTR(ADDIW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -34,6 +38,7 @@ SIM_INSTR(SLLI) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -43,6 +48,7 @@ SIM_INSTR(SRLI) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -52,6 +58,7 @@ SIM_INSTR(SRAI) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -61,6 +68,7 @@ SIM_INSTR(SLLIW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -70,6 +78,7 @@ SIM_INSTR(SRLIW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -79,6 +88,7 @@ SIM_INSTR(SRAIW) {
 
     gpr.write(instr.rd(), word_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -87,6 +97,7 @@ SIM_INSTR(LUI) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(instr.imm()));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -96,6 +107,7 @@ SIM_INSTR(AUIPC) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -108,6 +120,7 @@ SIM_INSTR(SLL) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -118,6 +131,7 @@ SIM_INSTR(SRL) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -128,6 +142,7 @@ SIM_INSTR(SRA) {
 
     gpr.write(instr.rd(), res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -138,6 +153,7 @@ SIM_INSTR(ADDW) {
 
     gpr.write(instr.rd(), word_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -148,6 +164,7 @@ SIM_INSTR(SUBW) {
 
     gpr.write(instr.rd(), word_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -158,6 +175,7 @@ SIM_INSTR(SLLW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -168,6 +186,7 @@ SIM_INSTR(SRLW) {
 
     gpr.write(instr.rd(), static_cast<int32_t>(word_res));
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -178,6 +197,7 @@ SIM_INSTR(SRAW) {
 
     gpr.write(instr.rd(), word_res);
 
+    m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 
@@ -199,7 +219,7 @@ SIM_INSTR(JAL) {
     auto &gpr = m_hart.gprFile();
 
     auto link_pc = m_hart.pc() + 4;
-    auto offset = static_cast<int64_t>(instr.imm()) << 1;
+    int64_t offset = static_cast<int32_t>(instr.imm());
     auto new_pc = m_hart.pc() + offset;
 
     if (new_pc & PC_ALIGN_MASK) {
@@ -216,7 +236,7 @@ SIM_INSTR(JALR) {
     auto &gpr = m_hart.gprFile();
 
     auto link_pc = m_hart.pc() + 4;
-    int64_t offset = instr.imm();
+    int64_t offset = static_cast<int32_t>(instr.imm());
     auto new_pc = (offset + gpr.read<int64_t>(instr.rs1())) ^ 1;
 
     if (new_pc & PC_ALIGN_MASK) {
@@ -234,7 +254,7 @@ namespace {
 SimStatus simCondBranch(const instr::Instr &instr, hart::Hart &hart,
                         bool cond) {
     if (cond) {
-        auto offset = static_cast<int64_t>(instr.imm()) << 1;
+        auto offset = static_cast<int64_t>(instr.imm());
         auto new_pc = hart.pc() + offset;
 
         if (new_pc & PC_ALIGN_MASK) {
@@ -242,8 +262,10 @@ SimStatus simCondBranch(const instr::Instr &instr, hart::Hart &hart,
         }
 
         hart.pc() = new_pc;
+        return SimStatus::OK;
     }
 
+    hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::OK;
 }
 

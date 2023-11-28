@@ -4,6 +4,7 @@ add_sim_module(simulator)
 
 target_link_libraries(simulator
 PUBLIC
+    sim::bb
     sim::common
     sim::hart
     sim::instr
