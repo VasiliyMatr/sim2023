@@ -11,3 +11,5 @@ PUBLIC
 )
 
 target_sources(simulator PRIVATE src/simulator.cpp)
+
+add_subdirectory(tests)
