@@ -1,6 +1,8 @@
 #ifndef INCL_SIMULATOR_SIM_INSTR_HPP
 #define INCL_SIMULATOR_SIM_INSTR_HPP
 
+#include "sim/memory/common.hpp"
+#include <cstdint>
 #include <sim/common.hpp>
 #include <sim/hart.hpp>
 #include <sim/instr.hpp>
@@ -20,6 +22,78 @@ static constexpr VirtAddr PC_ALIGN_MASK = 0x3;
 SIM_INSTR(ECALL) {
     m_hart.pc() += INSTR_CODE_SIZE;
     return SimStatus::SIM__EXIT;
+}
+
+SIM_INSTR(ADDI) {
+    auto &gpr = m_hart.gprFile();
+
+    uint64_t imm = static_cast<int32_t>(instr.imm());
+    auto res = gpr.read<int64_t>(instr.rs1()) + imm;
+
+    gpr.write(instr.rd(), res);
+
+    m_hart.pc() += INSTR_CODE_SIZE;
+    return SimStatus::OK;
+}
+
+SIM_INSTR(SLTI) {
+    auto &gpr = m_hart.gprFile();
+
+    int64_t imm = static_cast<int32_t>(instr.imm());
+    uint64_t res = 1 ? gpr.read<int64_t>(instr.rs1()) < imm : 0;
+
+    gpr.write(instr.rd(), res);
+
+    m_hart.pc() += INSTR_CODE_SIZE;
+    return SimStatus::OK;
+}
+
+SIM_INSTR(SLTIU) {
+    auto &gpr = m_hart.gprFile();
+
+    uint64_t imm = static_cast<int32_t>(instr.imm());
+    uint64_t res = 1 ? gpr.read<uint64_t>(instr.rs1()) < imm : 0;
+
+    gpr.write(instr.rd(), res);
+
+    m_hart.pc() += INSTR_CODE_SIZE;
+    return SimStatus::OK;
+}
+
+SIM_INSTR(ANDI) {
+    auto &gpr = m_hart.gprFile();
+
+    uint64_t imm = static_cast<int32_t>(instr.imm());
+    uint64_t res = gpr.read<uint64_t>(instr.rs1()) & imm;
+
+    gpr.write(instr.rd(), res);
+
+    m_hart.pc() += INSTR_CODE_SIZE;
+    return SimStatus::OK;
+}
+
+SIM_INSTR(ORI) {
+    auto &gpr = m_hart.gprFile();
+
+    uint64_t imm = static_cast<int32_t>(instr.imm());
+    uint64_t res = gpr.read<uint64_t>(instr.rs1()) | imm;
+
+    gpr.write(instr.rd(), res);
+
+    m_hart.pc() += INSTR_CODE_SIZE;
+    return SimStatus::OK;
+}
+
+SIM_INSTR(XORI) {
+    auto &gpr = m_hart.gprFile();
+
+    uint64_t imm = static_cast<int32_t>(instr.imm());
+    uint64_t res = gpr.read<uint64_t>(instr.rs1()) ^ imm;
+
+    gpr.write(instr.rd(), res);
+
+    m_hart.pc() += INSTR_CODE_SIZE;
+    return SimStatus::OK;
 }
 
 SIM_INSTR(ADDIW) {

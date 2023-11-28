@@ -64,7 +64,8 @@ class Simulator final {
         static_assert(std::is_integral_v<Int>);
 
         auto &gpr = m_hart.gprFile();
-        auto va = gpr.read<VirtAddr>(instr.rs1());
+        auto va_base = gpr.read<VirtAddr>(instr.rs1());
+        auto va = va_base + static_cast<int32_t>(instr.imm());
 
         auto [status, res] = loadInt<Int, MemAccessType::READ>(va);
         if (status != SimStatus::OK) {
@@ -73,7 +74,6 @@ class Simulator final {
 
         gpr.write(instr.rd(), res);
 
-        ++m_icount;
         m_hart.pc() += INSTR_CODE_SIZE;
         return SimStatus::OK;
     }
@@ -105,14 +105,14 @@ class Simulator final {
         static_assert(std::is_unsigned_v<UInt>);
 
         auto &gpr = m_hart.gprFile();
-        auto va = gpr.read<VirtAddr>(instr.rs1());
+        auto va_base = gpr.read<VirtAddr>(instr.rs1());
+        auto va = va_base + static_cast<int32_t>(instr.imm());
 
         auto value = gpr.read<UInt>(instr.rs2());
 
         auto status = storeInt(va, value);
 
         if (status == SimStatus::OK) {
-            ++m_icount;
             m_hart.pc() += INSTR_CODE_SIZE;
         }
 

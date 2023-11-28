@@ -1,3 +1,4 @@
+#include "sim/instr/instr_id.gen.hpp"
 #include <sim/common.hpp>
 #include <sim/hart.hpp>
 #include <sim/instr.hpp>
@@ -13,6 +14,24 @@ SimStatus Simulator::simBb(const bb::Bb &bb) noexcept {
         auto status = SimStatus::SIM__NOT_IMPLEMENTED_INSTR;
 
         switch (instr.id()) {
+        case instr::InstrId::ADDI:
+            status = simInstr<instr::InstrId::ADDI>(instr);
+            break;
+        case instr::InstrId::SLTI:
+            status = simInstr<instr::InstrId::SLTI>(instr);
+            break;
+        case instr::InstrId::SLTIU:
+            status = simInstr<instr::InstrId::SLTIU>(instr);
+            break;
+        case instr::InstrId::ANDI:
+            status = simInstr<instr::InstrId::ANDI>(instr);
+            break;
+        case instr::InstrId::ORI:
+            status = simInstr<instr::InstrId::ORI>(instr);
+            break;
+        case instr::InstrId::XORI:
+            status = simInstr<instr::InstrId::XORI>(instr);
+            break;
         case instr::InstrId::ADDIW:
             status = simInstr<instr::InstrId::ADDIW>(instr);
             break;
