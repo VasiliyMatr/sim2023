@@ -37,6 +37,7 @@ function(add_sim_module MODULE_NAME)
     target_include_directories(${MODULE_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 endfunction(add_sim_module)
 
+add_subdirectory(bb)
 add_subdirectory(common)
 add_subdirectory(csr)
 add_subdirectory(gpr)
