@@ -7,15 +7,16 @@ SimStatus Simulator::simulate(VirtAddr start_pc) {
     m_hart.pc() = start_pc;
     m_icount = 0;
 
-    bb::Bb bb{};
-
     while (true) {
         // Fetch & decode bb
-        auto fetch = Fetch(m_hart.pc(), *this);
-        bb.update(m_hart.pc(), fetch);
+        auto &cached_bb = this->m_bb_cache.find(m_hart.pc());
+        if (cached_bb.getVirtAddr() != m_hart.pc()) {
+            auto fetch = Fetch(m_hart.pc(), *this);
+            cached_bb.update(m_hart.pc(), fetch);
+        }
 
         // Execute
-        const auto *instrs = bb.instrs();
+        const auto *instrs = cached_bb.instrs();
         auto status = dispatch(instrs->id())(*this, instrs);
 
         if (status == SimStatus::SIM__EXIT) {

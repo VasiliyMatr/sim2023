@@ -24,6 +24,7 @@ PUBLIC
     sim::common
     sim::hart
     sim::instr
+    sim::cache_tlb
 )
 
 target_sources(simulator PRIVATE src/simulator.cpp)

@@ -4,12 +4,18 @@
 #include <type_traits>
 
 #include <sim/bb.hpp>
+#include <sim/bb_cache.hpp>
 #include <sim/common.hpp>
 #include <sim/hart.hpp>
 #include <sim/instr.hpp>
 #include <sim/memory.hpp>
+#include <sim/tlb.hpp>
 
 namespace sim {
+
+static constexpr VirtAddr POISON_VA = 1ULL << 56;
+static constexpr size_t TLB_SIZE_LOG_2 = 7;
+static constexpr size_t BB_SIZE_LOG_2 = 7;
 
 class Simulator final {
     using MemAccessType = memory::MMU64::AccessType;
@@ -17,6 +23,12 @@ class Simulator final {
     memory::PhysMemory m_phys_memory{};
 
     hart::Hart m_hart{m_phys_memory};
+
+    cache::TLB<TLB_SIZE_LOG_2> m_tlb;
+    cache::TLB<TLB_SIZE_LOG_2> m_read_tlb;
+    cache::TLB<TLB_SIZE_LOG_2> m_fetch_tlb;
+
+    cache::BbCache<BB_SIZE_LOG_2> m_bb_cache;
 
     size_t m_icount = 0;
 
@@ -31,6 +43,13 @@ class Simulator final {
         Int value;
     };
 
+    auto &whichCache(MemAccessType access_type) {
+        if (access_type == MemAccessType::FETCH) {
+            return m_fetch_tlb;
+        }
+        return m_read_tlb;
+    }
+
     // Load integer value from memory
     template <class Int, MemAccessType access_type>
     LoadResult<Int> loadInt(VirtAddr va) noexcept {
@@ -43,18 +62,27 @@ class Simulator final {
             return {SimStatus::SIM__UNALIGNED_LOAD, 0};
         }
 
-        // Translate VA -> PA
+        memory::HostPtr host_addr;
+        Int value = 0;
+
+        auto &cache_type = whichCache(access_type);
+
+        if (cache_type.find(va, host_addr)) {
+            value = *reinterpret_cast<const Int *>(host_addr);
+            return {SimStatus::OK, value};
+        }
+         // Translate VA -> PA
         auto [mmu_status, pa] = translateVa<access_type>(va);
         if (mmu_status != SimStatus::OK) {
             return {mmu_status, 0};
         }
-
         // Read physical memory
-        Int value = 0;
         auto [read_status, to_cache] = m_hart.physMemory().read(pa, value);
         if (read_status != SimStatus::OK) {
             return {read_status, 0};
         }
+
+        cache_type.update(va, host_addr);
 
         return {SimStatus::OK, value};
     }
@@ -86,6 +114,13 @@ class Simulator final {
             return SimStatus::SIM__UNALIGNED_STORE;
         }
 
+        memory::HostPtr host_addr;
+
+        if (m_tlb.find(va, host_addr)) {
+            *reinterpret_cast<Int *>(host_addr) = value;
+            return SimStatus::OK;
+        }
+
         // Translate VA -> PA
         auto [mmu_status, pa] = translateVa<MemAccessType::WRITE>(va);
         if (mmu_status != SimStatus::OK) {
@@ -97,6 +132,8 @@ class Simulator final {
         if (read_status != SimStatus::OK) {
             return read_status;
         }
+
+        m_tlb.update(va, host_addr);
 
         return SimStatus::OK;
     }
