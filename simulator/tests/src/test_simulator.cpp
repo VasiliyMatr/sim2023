@@ -41,7 +41,7 @@ TEST_F(SimulatorTest, ecall) {
     };
 
     ASSERT_EQ(simulate(CODE), SimStatus::OK);
-    ASSERT_EQ(sim.icount(), CODE.size() - 1);
+    ASSERT_EQ(sim.icount(), CODE.size());
 
     ASSERT_EQ(sim.getHart().gprFile().read<uint64_t>(gpr::GPR_IDX::A7), 93);
 }
@@ -58,7 +58,7 @@ TEST_F(SimulatorTest, addSub) {
     };
 
     ASSERT_EQ(simulate(CODE), SimStatus::OK);
-    ASSERT_EQ(sim.icount(), CODE.size() - 1);
+    ASSERT_EQ(sim.icount(), CODE.size());
 
     const auto &gpr = sim.getHart().gprFile();
 
@@ -84,7 +84,7 @@ TEST_F(SimulatorTest, cycle) {
     };
 
     ASSERT_EQ(simulate(CODE), SimStatus::OK);
-    ASSERT_EQ(sim.icount(), 25);
+    ASSERT_EQ(sim.icount(), 26);
 
     const auto &gpr = sim.getHart().gprFile();
 
@@ -114,7 +114,7 @@ TEST_F(SimulatorTest, loadStore) {
     };
 
     ASSERT_EQ(simulate(CODE), SimStatus::OK);
-    ASSERT_EQ(sim.icount(), CODE.size() - 1);
+    ASSERT_EQ(sim.icount(), CODE.size());
 
     const auto &gpr = sim.getHart().gprFile();
 
