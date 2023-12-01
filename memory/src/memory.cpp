@@ -117,7 +117,7 @@ NODISCARD MMU64::Result MMU64::translate(PrivLevel priv_level,
         flags = pte;
 
         // Check PTE validity
-        if (flags.v() || (!flags.r() && flags.w()) ||
+        if (!flags.v() || (!flags.r() && flags.w()) ||
             (pte & PTE_RESERWED_MASK)) {
             return PAGE_FAULT_RES;
         }
