@@ -7,7 +7,6 @@ PUBLIC
     sim::common
 )
 
-set(RISCV_YAML ${CMAKE_CURRENT_SOURCE_DIR}/risc-v.yaml)
 set(INCLUDE_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/include/sim/instr)
 set(SRC_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/src)
 
