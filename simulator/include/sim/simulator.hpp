@@ -1,6 +1,7 @@
 #ifndef INCL_SIM_SIMULATOR_HPP
 #define INCL_SIM_SIMULATOR_HPP
 
+#include "sim/instr/instr_id.gen.hpp"
 #include <type_traits>
 
 #include <sim/bb.hpp>
@@ -60,20 +61,21 @@ class Simulator final {
     }
 
     // Simulate load instruction for given type
-    template <class Int> SimStatus simLoadInstr(const instr::Instr &instr) {
+    template <class Int> SimStatus simLoadInstr(const instr::Instr *instr) {
         static_assert(std::is_integral_v<Int>);
 
         auto &gpr = m_hart.gprFile();
-        auto va_base = gpr.read<VirtAddr>(instr.rs1());
-        auto va = va_base + static_cast<int32_t>(instr.imm());
+        auto va_base = gpr.read<VirtAddr>(instr->rs1());
+        auto va = va_base + static_cast<int32_t>(instr->imm());
 
         auto [status, res] = loadInt<Int, MemAccessType::READ>(va);
         if (status != SimStatus::OK) {
             return status;
         }
 
-        gpr.write(instr.rd(), res);
+        gpr.write(instr->rd(), res);
 
+        ++m_icount;
         m_hart.pc() += INSTR_CODE_SIZE;
         return SimStatus::OK;
     }
@@ -101,28 +103,57 @@ class Simulator final {
     }
 
     // Simulate store instruction for given type
-    template <class UInt> SimStatus simStoreInstr(const instr::Instr &instr) {
+    template <class UInt> SimStatus simStoreInstr(const instr::Instr *instr) {
         static_assert(std::is_unsigned_v<UInt>);
 
         auto &gpr = m_hart.gprFile();
-        auto va_base = gpr.read<VirtAddr>(instr.rs1());
-        auto va = va_base + static_cast<int32_t>(instr.imm());
+        auto va_base = gpr.read<VirtAddr>(instr->rs1());
+        auto va = va_base + static_cast<int32_t>(instr->imm());
 
-        auto value = gpr.read<UInt>(instr.rs2());
+        auto value = gpr.read<UInt>(instr->rs2());
 
         auto status = storeInt(va, value);
-
-        if (status == SimStatus::OK) {
-            m_hart.pc() += INSTR_CODE_SIZE;
+        if (status != SimStatus::OK) {
+            return status;
         }
 
-        return status;
+        ++m_icount;
+        m_hart.pc() += INSTR_CODE_SIZE;
+        return SimStatus::OK;
+    }
+
+    template <class Int, template<typename> typename Cmp>
+    SimStatus simCondBranch(const instr::Instr *instr) {
+        auto &gpr = m_hart.gprFile();
+
+        auto rs1 = gpr.read<Int>(instr->rs1());
+        auto rs2 = gpr.read<Int>(instr->rs2());
+
+        if (Cmp<Int>()(rs1, rs2)) {
+            auto offset = static_cast<int64_t>(instr->imm());
+            auto new_pc = m_hart.pc() + offset;
+
+            if (new_pc & 0x3) {
+                return SimStatus::SIM__PC_ALIGN_ERROR;
+            }
+
+            ++m_icount;
+            m_hart.pc() = new_pc;
+            return SimStatus::OK;
+        }
+
+        ++m_icount;
+        m_hart.pc() += INSTR_CODE_SIZE;
+        return SimStatus::OK;
     }
 
     template <instr::InstrId>
-    SimStatus simInstr(const instr::Instr &instr) noexcept;
+    static SimStatus simInstr(Simulator &sim,
+                              const instr::Instr *instr) noexcept;
 
-    SimStatus simBb(const bb::Bb &bb) noexcept;
+    using SimInstrPtr = SimStatus (*)(Simulator &, const instr::Instr *);
+
+    inline static SimInstrPtr dispatch(instr::InstrId) noexcept;
 
     class Fetch final {
         using FetchResult = bb::Bb::FetchResult;

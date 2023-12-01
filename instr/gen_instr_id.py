@@ -18,7 +18,7 @@ def main():
                    "namespace instr {" "\n\n" +\
                    "enum class InstrId : uint8_t {" "\n"
 
-    write_buffer += "UNDEF,\n"
+    write_buffer += "SIM_STATUS_INSTR,\n"
     for inst in yaml_dump.get("instructions"):
         inst_name = inst.get("mnemonic").upper()
         if "." in inst_name:

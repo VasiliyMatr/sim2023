@@ -14,7 +14,6 @@ struct Bb final {
   private:
     VirtAddr m_virt_addr = INVALID_VA;
 
-    size_t m_size = 0;
     std::array<instr::Instr, MAX_SIZE> m_instrs{};
 
     NODISCARD static constexpr bool isBranch(instr::InstrId id) noexcept {
@@ -41,19 +40,7 @@ struct Bb final {
         return second.m_virt_addr == m_virt_addr;
     }
 
-    NODISCARD auto begin() const noexcept {
-        SIM_ASSERT(m_virt_addr != INVALID_VA);
-
-        return m_instrs.cbegin();
-    }
-
-    NODISCARD auto end() const noexcept {
-        SIM_ASSERT(m_virt_addr != INVALID_VA);
-
-        auto it = m_instrs.cbegin();
-        std::advance(it, m_size);
-        return it;
-    }
+    NODISCARD const auto *instrs() const noexcept { return m_instrs.data(); }
 
     struct FetchResult final {
         SimStatus status = SimStatus::PHYS_MEM__ACCESS_FAULT;
@@ -61,42 +48,43 @@ struct Bb final {
     };
 
     template <class Fetch>
-    SimStatus update(VirtAddr bb_virt_addr, Fetch &fetch) noexcept {
+    void update(VirtAddr bb_virt_addr, Fetch &fetch) noexcept {
         // Decode instrs starting from bb_virt_addr
         m_virt_addr = bb_virt_addr;
-        m_size = 0;
 
-        for (; m_size <= Bb::MAX_SIZE;) {
+        for (size_t i = 0; i < MAX_SIZE - 1; ++i) {
             // Fetch next instr
             FetchResult fetch_res = fetch();
 
             // Fetch failure ends bb
             if (fetch_res.status != SimStatus::OK) {
-                return fetch_res.status;
+                m_instrs[i] = instr::Instr::statusInstr(fetch_res.status);
+                return;
             }
 
             // Decode next instr
-            auto &instr = m_instrs[m_size] = instr::Instr(fetch_res.instr_code);
-            ++m_size;
+            auto &instr = m_instrs[i] = instr::Instr(fetch_res.instr_code);
 
-            // Undefined instr ends bb
-            if (instr.id() == instr::InstrId::UNDEF) {
-                return SimStatus::SIM__NOT_IMPLEMENTED_INSTR;
+            // Status instr indicates illegal instr
+            // Illegal instr ends bb
+            if (instr.id() == instr::InstrId::SIM_STATUS_INSTR) {
+                return;
             }
 
             // Branch instr ends bb
             if (isBranch(instr.id())) {
-                return SimStatus::OK;
+                return;
             }
         }
 
         // Reached max size
-        return SimStatus::OK;
+        m_instrs[MAX_SIZE - 1] = instr::Instr::statusInstr(SimStatus::OK);
     }
 
-    void constexpr invalidate() noexcept {
-        m_size = 0;
+    void invalidate() noexcept {
         m_virt_addr = INVALID_VA;
+        m_instrs[0] =
+            instr::Instr::statusInstr(SimStatus::SIM__NOT_IMPLEMENTED_INSTR);
     }
 };
 
