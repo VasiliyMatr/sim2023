@@ -121,8 +121,10 @@ class CSRValue:
         return out
 
     def gen_get_value(self) -> str:
-        out = "NODISCARD auto getValue() const noexcept {\n"
-        out += "RawValue value = 0;\n"
+        out = """
+            NODISCARD auto getValue() const noexcept {
+            RawValue value = 0;
+        """
 
         for field in self.fields:
             field_value = "static_cast<%s>(%s)" % (field.raw_type, field.m_name) if field.is_enum\
@@ -131,7 +133,10 @@ class CSRValue:
             out += "value = bit::setBitField<RawValue>(%d, %d, value, %s);\n" %\
                 (field.hi, field.lo, field_value)
 
-        out += "}\n"
+        out += """
+            return value;
+            }
+        """
 
         return out
 

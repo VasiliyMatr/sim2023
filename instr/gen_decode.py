@@ -21,7 +21,8 @@ def GenerateGetBinValue(bit_section: dict) -> str:
 def GenerateFieldAssigning(inst: dict, field_dict: dict) -> str:
     write_buffer = ""
     write_buffer += f"m_id = InstrId::{inst.get('mnemonic').upper().replace('.', '_', 3)};\n"
-    extend_from = 0 
+    write_buffer += "m_imm = 0;\n"
+    extend_from = 0
 
     for field in inst.get("fields"):
         if field in KNOWN_REGS:

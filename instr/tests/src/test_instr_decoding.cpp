@@ -1,16 +1,17 @@
+#include <tuple>
+
 #include <gtest/gtest.h>
 
-#include <iostream>
 #include <sim/common.hpp>
 #include <sim/instr.hpp>
-#include <tuple>
 
 namespace sim {
 namespace instr {
 
 TEST(Instr, undef) {
     Instr test = Instr(static_cast<InstrCode>(0));
-    ASSERT_EQ(test.id(), InstrId::UNDEF);
+    ASSERT_EQ(test.id(), InstrId::SIM_STATUS_INSTR);
+    ASSERT_EQ(test.status(), SimStatus::SIM__NOT_IMPLEMENTED_INSTR);
 }
 
 TEST(Instr, add) {

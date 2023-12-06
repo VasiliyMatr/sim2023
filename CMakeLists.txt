@@ -17,6 +17,9 @@ if (NOT GTest_FOUND)
     message(WARNING "GTest package is not found. Tests will not be built.")
 endif ()
 
+# RISCV instrs description
+set(RISCV_YAML ${CMAKE_CURRENT_SOURCE_DIR}/risc-v.yaml)
+
 # Add header only simulator module library
 function(add_sim_header_module MODULE_NAME)
     add_library(${MODULE_NAME} INTERFACE)
@@ -37,6 +40,7 @@ function(add_sim_module MODULE_NAME)
     target_include_directories(${MODULE_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 endfunction(add_sim_module)
 
+add_subdirectory(bb)
 add_subdirectory(common)
 add_subdirectory(csr)
 add_subdirectory(gpr)

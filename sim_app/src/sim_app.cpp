@@ -1,6 +1,7 @@
 #include <iomanip>
 #include <vector>
 
+#include <sim/common.hpp>
 #include <sim/memory.hpp>
 #include <sim/simulator.hpp>
 
@@ -29,11 +30,18 @@ int main() {
     const PhysAddr CODE_SEG_BASE = 0x5000000000;
 
     const std::vector<InstrCode> CODE = {
-        0x00a0059b, // addiw a1,x0,10
-        0x0140051b, // addiw a0,x0,20
-        0x00b5053b, // addw a0,a0,a1
-        0x40a5853b, // subw a0,a1,a0
-        0x05d0089b, // addiw a7,x0,93
+        0x0000051b, // addiw a0, zero, 0
+        0x0000029b, // addiw t0, zero, 0
+        0x0050031b, // addiw t1, zero, 5
+
+        // for:
+        0x0062d863, // bge t0, t1, end
+        0x0055053b, // addw a0, a0, t0
+        0x0012829b, // addiw t0, t0, 1
+        0xff5ff06f, // j for
+
+        // end:
+        0x05d0089b, // addiw a7, x0, 93
         0x00000073  // ecall
     };
 
@@ -48,16 +56,18 @@ int main() {
     for (size_t i = 0, end = CODE.size(); i != end; ++i) {
         SIM_ASSERT(
             phys_memory.write(CODE_SEG_BASE + i * INSTR_CODE_SIZE, CODE[i])
-                .status == memory::PhysMemory::AccessStatus::OK);
+                .status == SimStatus::OK);
     }
 
     auto status = simulator.simulate(CODE_SEG_BASE);
+
+    std::cout << "icount = " << simulator.icount() << std::endl;
 
     std::cout << "GPRs:" << std::endl;
     dump_gpr_file(simulator.getHart().gprFile());
 
     switch (status) {
-    case sim::Simulator::SimStatus::OK:
+    case SimStatus::OK:
         std::cout << "Success!" << std::endl;
         return 0;
     default:

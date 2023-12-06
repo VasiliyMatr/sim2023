@@ -12,12 +12,11 @@ namespace sim::memory {
 // Translates VirtAddr -> PhysAddr in 64-bit mode
 struct MMU64 final {
     enum class AccessType { READ, WRITE, FETCH };
-    enum class Status { OK, ACCESS_FAULT, PAGE_FAULT };
 
     // Translation result
     struct Result final {
-        Status m_status;
-        PhysAddr m_phys_addr;
+        SimStatus status = SimStatus::MMU64__PAGE_FAULT;
+        PhysAddr phys_addr = 0;
     };
 
   private:
