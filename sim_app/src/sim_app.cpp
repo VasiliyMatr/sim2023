@@ -1,7 +1,7 @@
-#include "sim/common.hpp"
 #include <iomanip>
 #include <vector>
 
+#include <sim/common.hpp>
 #include <sim/memory.hpp>
 #include <sim/simulator.hpp>
 

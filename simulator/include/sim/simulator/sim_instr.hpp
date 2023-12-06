@@ -1,16 +1,7 @@
 #ifndef INCL_SIMULATOR_SIM_INSTR_HPP
 #define INCL_SIMULATOR_SIM_INSTR_HPP
 
-#include <algorithm>
-#include <cstdint>
-#include <functional>
-#include <sim/common.hpp>
-#include <sim/hart.hpp>
-#include <sim/instr.hpp>
-#include <sim/instr/instr_id.gen.hpp>
-#include <sim/memory.hpp>
 #include <sim/simulator.hpp>
-#include <utility>
 
 namespace sim {
 

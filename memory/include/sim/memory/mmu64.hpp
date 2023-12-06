@@ -1,7 +1,6 @@
 #ifndef INCL_MEMORY_MMU64_HPP
 #define INCL_MEMORY_MMU64_HPP
 
-#include "sim/common.hpp"
 #include <sim/csr/idx.gen.hpp>
 #include <sim/csr/value.gen.hpp>
 

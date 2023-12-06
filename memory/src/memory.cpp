@@ -1,4 +1,3 @@
-#include "sim/common.hpp"
 #include <sim/memory.hpp>
 
 namespace sim::memory {

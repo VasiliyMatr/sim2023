@@ -1,6 +1,3 @@
-#include "sim/common.hpp"
-#include "sim/csr/idx.gen.hpp"
-#include "sim/csr/value.gen.hpp"
 #include <sim/csr.hpp>
 
 namespace sim::csr {

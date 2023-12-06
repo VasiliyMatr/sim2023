@@ -1,7 +1,6 @@
 #ifndef INCL_SIM_SIMULATOR_HPP
 #define INCL_SIM_SIMULATOR_HPP
 
-#include "sim/instr/instr_id.gen.hpp"
 #include <type_traits>
 
 #include <sim/bb.hpp>
@@ -122,7 +121,7 @@ class Simulator final {
         return SimStatus::OK;
     }
 
-    template <class Int, template<typename> typename Cmp>
+    template <class Int, template <typename> typename Cmp>
     SimStatus simCondBranch(const instr::Instr *instr) {
         auto &gpr = m_hart.gprFile();
 

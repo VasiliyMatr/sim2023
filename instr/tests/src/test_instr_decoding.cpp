@@ -1,9 +1,9 @@
+#include <tuple>
+
 #include <gtest/gtest.h>
 
-#include <iostream>
 #include <sim/common.hpp>
 #include <sim/instr.hpp>
-#include <tuple>
 
 namespace sim {
 namespace instr {

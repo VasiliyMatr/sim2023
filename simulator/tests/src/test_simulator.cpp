@@ -1,6 +1,3 @@
-#include "sim/common.hpp"
-#include "sim/gpr.hpp"
-#include <cstdint>
 #include <vector>
 
 #include <gtest/gtest.h>
