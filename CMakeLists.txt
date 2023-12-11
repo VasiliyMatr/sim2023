@@ -10,6 +10,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 # C++20 is the default standard
 set(CMAKE_CXX_STANDARD 20)
 
+# for libelf
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Wextra")
 
 find_package(GTest QUIET)
@@ -47,6 +50,7 @@ add_subdirectory(gpr)
 add_subdirectory(hart)
 add_subdirectory(instr)
 add_subdirectory(memory)
+add_subdirectory(elf)
 add_subdirectory(cache)
 add_subdirectory(simulator)
 add_subdirectory(sim_app)

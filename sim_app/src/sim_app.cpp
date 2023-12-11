@@ -1,9 +1,12 @@
 #include <iomanip>
 #include <vector>
+#include <string>
+#include <iostream>
 
 #include <sim/common.hpp>
 #include <sim/memory.hpp>
 #include <sim/simulator.hpp>
+#include <sim/elf.hpp>
 
 using namespace sim;
 
@@ -27,41 +30,16 @@ void dump_gpr_file(const gpr::GPRFile &gpr_file) {
 } // namespace
 
 int main() {
-    const PhysAddr CODE_SEG_BASE = 0x5000000000;
-
-    const std::vector<InstrCode> CODE = {
-        0x0000051b, // addiw a0, zero, 0
-        0x0000029b, // addiw t0, zero, 0
-        0x0050031b, // addiw t1, zero, 5
-
-        // for:
-        0x0062d863, // bge t0, t1, end
-        0x0055053b, // addw a0, a0, t0
-        0x0012829b, // addiw t0, t0, 1
-        0xff5ff06f, // j for
-
-        // end:
-        0x05d0089b, // addiw a7, x0, 93
-        0x00000073  // ecall
-    };
 
     auto simulator = sim::Simulator();
     auto &phys_memory = simulator.getPhysMemory();
 
-    for (PhysAddr page_pa = CODE_SEG_BASE, end = CODE.size() + CODE_SEG_BASE;
-         page_pa < end; page_pa += memory::PAGE_SIZE) {
-        SIM_ASSERT(phys_memory.addRAMPage(page_pa));
-    }
 
-    for (size_t i = 0, end = CODE.size(); i != end; ++i) {
-        SIM_ASSERT(
-            phys_memory.write(CODE_SEG_BASE + i * INSTR_CODE_SIZE, CODE[i])
-                .status == SimStatus::OK);
-    }
+    const std::string elf_filename = "/mnt/d/progi/fukn_sim/sim2023/build/sim_app/8queens";
 
-    auto status = simulator.simulate(CODE_SEG_BASE);
+    auto entry_point = elf::load(elf_filename, phys_memory);
 
-    std::cout << "icount = " << simulator.icount() << std::endl;
+    auto status = simulator.simulate(entry_point);
 
     std::cout << "GPRs:" << std::endl;
     dump_gpr_file(simulator.getHart().gprFile());
