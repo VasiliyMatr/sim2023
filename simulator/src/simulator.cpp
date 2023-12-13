@@ -9,7 +9,7 @@ SimStatus Simulator::simulate(VirtAddr start_pc) {
 
     while (true) {
         // Fetch & decode bb
-        auto &cached_bb = this->m_bb_cache.find(m_hart.pc());
+        auto &cached_bb = m_bb_cache.find(m_hart.pc());
         if (cached_bb.getVirtAddr() != m_hart.pc()) {
             auto fetch = Fetch(m_hart.pc(), *this);
             cached_bb.update(m_hart.pc(), fetch);

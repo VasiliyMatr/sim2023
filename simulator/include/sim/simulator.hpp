@@ -13,22 +13,24 @@
 
 namespace sim {
 
-static constexpr VirtAddr POISON_VA = 1ULL << 56;
-static constexpr size_t TLB_SIZE_LOG_2 = 7;
-static constexpr size_t BB_SIZE_LOG_2 = 7;
-
 class Simulator final {
     using MemAccessType = memory::MMU64::AccessType;
+
+    static constexpr size_t TLB_SIZE_LOG_2 = 7;
+    static constexpr size_t BB_CACHE_SIZE_LOG_2 = 7;
+
+    using ReadTLB = cache::TLB<memory::ConstHostPtr, TLB_SIZE_LOG_2>;
+    using WriteTLB = cache::TLB<memory::HostPtr, TLB_SIZE_LOG_2>;
 
     memory::PhysMemory m_phys_memory{};
 
     hart::Hart m_hart{m_phys_memory};
 
-    cache::TLB<TLB_SIZE_LOG_2> m_tlb;
-    cache::TLB<TLB_SIZE_LOG_2> m_read_tlb;
-    cache::TLB<TLB_SIZE_LOG_2> m_fetch_tlb;
+    ReadTLB m_read_tlb {};
+    WriteTLB m_write_tlb {};
+    ReadTLB m_fetch_tlb {};
 
-    cache::BbCache<BB_SIZE_LOG_2> m_bb_cache;
+    cache::BbCache<BB_CACHE_SIZE_LOG_2> m_bb_cache;
 
     size_t m_icount = 0;
 
@@ -40,10 +42,11 @@ class Simulator final {
     // Memory load result
     template <class Int> struct LoadResult final {
         SimStatus status = SimStatus::PHYS_MEM__ACCESS_FAULT;
-        Int value;
+        Int value = 0;
     };
 
-    auto &whichCache(MemAccessType access_type) {
+    template<MemAccessType access_type>
+    constexpr auto &getReadTLB() noexcept {
         if (access_type == MemAccessType::FETCH) {
             return m_fetch_tlb;
         }
@@ -58,31 +61,33 @@ class Simulator final {
         static_assert(access_type == MemAccessType::FETCH ||
                       access_type == MemAccessType::READ);
 
+        // Check alignment
         if (va & memory::addrAlignMask<Int>()) {
             return {SimStatus::SIM__UNALIGNED_LOAD, 0};
         }
 
-        memory::HostPtr host_addr;
-        Int value = 0;
-
-        auto &cache_type = whichCache(access_type);
-
-        if (cache_type.find(va, host_addr)) {
-            value = *reinterpret_cast<const Int *>(host_addr);
+        // Try to hit tlb
+        memory::ConstHostPtr host_addr = nullptr;
+        if (getReadTLB<access_type>().find(va, host_addr)) {
+            Int value = *reinterpret_cast<const Int *>(host_addr);
             return {SimStatus::OK, value};
         }
-         // Translate VA -> PA
+
+        // Translate VA -> PA
         auto [mmu_status, pa] = translateVa<access_type>(va);
         if (mmu_status != SimStatus::OK) {
             return {mmu_status, 0};
         }
+
         // Read physical memory
+        Int value = 0;
         auto [read_status, to_cache] = m_hart.physMemory().read(pa, value);
         if (read_status != SimStatus::OK) {
             return {read_status, 0};
         }
 
-        cache_type.update(va, host_addr);
+        // Cache tranlation
+        getReadTLB<access_type>().update(va, to_cache);
 
         return {SimStatus::OK, value};
     }
@@ -110,13 +115,14 @@ class Simulator final {
     template <class Int> SimStatus storeInt(VirtAddr va, Int value) {
         static_assert(std::is_integral_v<Int>);
 
+        // Check alignment
         if (va & memory::addrAlignMask<Int>()) {
             return SimStatus::SIM__UNALIGNED_STORE;
         }
 
-        memory::HostPtr host_addr;
-
-        if (m_tlb.find(va, host_addr)) {
+        // Try to hit tlb
+        memory::HostPtr host_addr = nullptr;
+        if (m_write_tlb.find(va, host_addr)) {
             *reinterpret_cast<Int *>(host_addr) = value;
             return SimStatus::OK;
         }
@@ -133,7 +139,8 @@ class Simulator final {
             return read_status;
         }
 
-        m_tlb.update(va, host_addr);
+        // Cache translation
+        m_write_tlb.update(va, to_cache);
 
         return SimStatus::OK;
     }
