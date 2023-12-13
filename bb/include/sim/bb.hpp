@@ -35,9 +35,8 @@ struct Bb final {
     }
 
   public:
-    // Basic blocks are considered equal for equal start addrs
-    NODISCARD constexpr bool operator==(const Bb &second) const noexcept {
-        return second.m_virt_addr == m_virt_addr;
+    NODISCARD constexpr auto getVirtAddr() const noexcept {
+        return m_virt_addr;
     }
 
     NODISCARD const auto *instrs() const noexcept { return m_instrs.data(); }
