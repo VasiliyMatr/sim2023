@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <iostream>
 #include <type_traits>
+#include <tuple>
 
 #define NODISCARD [[nodiscard]]
 
