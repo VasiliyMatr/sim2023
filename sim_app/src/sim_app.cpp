@@ -1,9 +1,12 @@
 #include <iomanip>
 #include <vector>
+#include <string>
+#include <iostream>
 
 #include <sim/common.hpp>
 #include <sim/memory.hpp>
 #include <sim/simulator.hpp>
+#include <sim/elf_load.hpp>
 
 using namespace sim;
 
@@ -26,52 +29,27 @@ void dump_gpr_file(const gpr::GPRFile &gpr_file) {
 
 } // namespace
 
-int main() {
-    const PhysAddr CODE_SEG_BASE = 0x5000000000;
-
-    const std::vector<InstrCode> CODE = {
-        0x0000051b, // addiw a0, zero, 0
-        0x0000029b, // addiw t0, zero, 0
-        0x0050031b, // addiw t1, zero, 5
-
-        // for:
-        0x0062d863, // bge t0, t1, end
-        0x0055053b, // addw a0, a0, t0
-        0x0012829b, // addiw t0, t0, 1
-        0xff5ff06f, // j for
-
-        // end:
-        0x05d0089b, // addiw a7, x0, 93
-        0x00000073  // ecall
-    };
+int main(int argc, char **argv) {
+    SIM_ASSERT(argc == 2);
 
     auto simulator = sim::Simulator();
-    auto &phys_memory = simulator.getPhysMemory();
+    auto &pm = simulator.getPhysMemory();
 
-    for (PhysAddr page_pa = CODE_SEG_BASE, end = CODE.size() + CODE_SEG_BASE;
-         page_pa < end; page_pa += memory::PAGE_SIZE) {
-        SIM_ASSERT(phys_memory.addRAMPage(page_pa));
-    }
+    auto sp = elf::map_stack(pm);
+    simulator.getHart().gprFile().write(gpr::GPR_IDX::SP, sp);
+    auto entry_point = elf::load(argv[1], pm);
 
-    for (size_t i = 0, end = CODE.size(); i != end; ++i) {
-        SIM_ASSERT(
-            phys_memory.write(CODE_SEG_BASE + i * INSTR_CODE_SIZE, CODE[i])
-                .status == SimStatus::OK);
-    }
-
-    auto status = simulator.simulate(CODE_SEG_BASE);
-
-    std::cout << "icount = " << simulator.icount() << std::endl;
+    auto status = simulator.simulate(entry_point);
 
     std::cout << "GPRs:" << std::endl;
     dump_gpr_file(simulator.getHart().gprFile());
 
     switch (status) {
     case SimStatus::OK:
-        std::cout << "Success!" << std::endl;
+        std::cout << "Success" << std::endl;
         return 0;
     default:
-        std::cout << "Error!" << std::endl;
+        std::cout << "Error: " << sim::to_underlying(status) << std::endl;
         return -1;
     }
 
