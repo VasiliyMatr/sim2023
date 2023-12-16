@@ -1,4 +1,9 @@
 # Describe sim_app build
 
 add_executable(sim_app src/sim_app.cpp)
-target_link_libraries(sim_app PRIVATE elf sim::elf sim::simulator)
+
+target_link_libraries(sim_app
+PRIVATE
+    sim::simulator
+    sim::elf_load
+)

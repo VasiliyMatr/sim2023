@@ -6,7 +6,7 @@
 #include <sim/common.hpp>
 #include <sim/memory.hpp>
 #include <sim/simulator.hpp>
-#include <sim/elf.hpp>
+#include <sim/elf_load.hpp>
 
 using namespace sim;
 
@@ -29,15 +29,15 @@ void dump_gpr_file(const gpr::GPRFile &gpr_file) {
 
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
+    SIM_ASSERT(argc == 2);
 
     auto simulator = sim::Simulator();
-    auto &phys_memory = simulator.getPhysMemory();
+    auto &pm = simulator.getPhysMemory();
 
-
-    const std::string elf_filename = "/mnt/d/progi/fukn_sim/sim2023/build/sim_app/8queens";
-
-    auto entry_point = elf::load(elf_filename, phys_memory);
+    auto sp = elf::map_stack(pm);
+    simulator.getHart().gprFile().write(gpr::GPR_IDX::SP, sp);
+    auto entry_point = elf::load(argv[1], pm);
 
     auto status = simulator.simulate(entry_point);
 
@@ -46,10 +46,10 @@ int main() {
 
     switch (status) {
     case SimStatus::OK:
-        std::cout << "Success!" << std::endl;
+        std::cout << "Success" << std::endl;
         return 0;
     default:
-        std::cout << "Error!" << std::endl;
+        std::cout << "Error: " << sim::to_underlying(status) << std::endl;
         return -1;
     }
 
