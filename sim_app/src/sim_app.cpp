@@ -35,11 +35,20 @@ int main(int argc, char **argv) {
     auto simulator = sim::Simulator();
     auto &pm = simulator.getPhysMemory();
 
-    auto sp = elf::map_stack(pm);
-    simulator.getHart().gprFile().write(gpr::GPR_IDX::SP, sp);
-    auto entry_point = elf::load(argv[1], pm);
+    elf::ElfLoader loader{pm};
 
-    auto status = simulator.simulate(entry_point);
+    auto [stack_map_status, start_sp] = loader.mapStack();
+    SIM_ASSERT(stack_map_status == SimStatus::OK);
+    simulator.getHart().gprFile().write(gpr::GPR_IDX::SP, start_sp);
+
+    auto [load_elf_status, start_pc] = loader.loadElf(argv[1]);
+    SIM_ASSERT(load_elf_status == SimStatus::OK);
+
+    csr::SATP64 satp64{};
+    satp64.setMODE(csr::SATP64::MODEValue::SV39);
+    simulator.getHart().csrFile().set(satp64);
+
+    auto status = simulator.simulate(start_pc);
 
     std::cout << "icount = " << simulator.icount() << std::endl;
 
