@@ -8,7 +8,7 @@
 
 #define NODISCARD [[nodiscard]]
 
-#ifndef SIM_ASSERT
+#ifndef NDEBUG
 #define SIM_ASSERT(cond)                                                       \
     do {                                                                       \
         if (!(cond)) {                                                         \
@@ -19,7 +19,11 @@
             std::terminate();                                                  \
         }                                                                      \
     } while (0)
-#endif
+
+#else
+#define SIM_ASSERT(cond) std::ignore = cond
+
+#endif // #ifndef NDEBUG
 
 namespace sim {
 
