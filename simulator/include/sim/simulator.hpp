@@ -173,7 +173,7 @@ class Simulator final {
         auto rs2 = gpr.read<Int>(instr->rs2());
 
         if (Cmp<Int>()(rs1, rs2)) {
-            auto offset = static_cast<int64_t>(instr->imm());
+            auto offset = static_cast<int32_t>(instr->imm());
             auto new_pc = m_hart.pc() + offset;
 
             if (new_pc & 0x3) {

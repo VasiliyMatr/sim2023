@@ -32,6 +32,85 @@ SIM_INSTR(ECALL) {
     return SimStatus::SIM__EXIT;
 }
 
+SIM_INSTR(ADD) {
+    auto &gpr = sim.m_hart.gprFile();
+
+    auto res =
+        gpr.read<int64_t>(instr->rs1()) + gpr.read<int64_t>(instr->rs2());
+
+    gpr.write(instr->rd(), res);
+
+    INCR_AND_SIM_NEXT();
+}
+
+SIM_INSTR(SUB) {
+    auto &gpr = sim.m_hart.gprFile();
+
+    auto res =
+        gpr.read<int64_t>(instr->rs1()) - gpr.read<int64_t>(instr->rs2());
+
+    gpr.write(instr->rd(), res);
+
+    INCR_AND_SIM_NEXT();
+}
+
+SIM_INSTR(SLT) {
+    auto &gpr = sim.m_hart.gprFile();
+
+    auto res = gpr.read<int64_t>(instr->rs1()) < gpr.read<int64_t>(instr->rs2())
+                   ? 1
+                   : 0;
+
+    gpr.write(instr->rd(), res);
+
+    INCR_AND_SIM_NEXT();
+}
+
+SIM_INSTR(SLTU) {
+    auto &gpr = sim.m_hart.gprFile();
+
+    auto res =
+        gpr.read<uint64_t>(instr->rs1()) < gpr.read<uint64_t>(instr->rs2()) ? 1
+                                                                            : 0;
+
+    gpr.write(instr->rd(), res);
+
+    INCR_AND_SIM_NEXT();
+}
+
+SIM_INSTR(AND) {
+    auto &gpr = sim.m_hart.gprFile();
+
+    auto res =
+        gpr.read<uint64_t>(instr->rs1()) & gpr.read<uint64_t>(instr->rs2());
+
+    gpr.write(instr->rd(), res);
+
+    INCR_AND_SIM_NEXT();
+}
+
+SIM_INSTR(OR) {
+    auto &gpr = sim.m_hart.gprFile();
+
+    auto res =
+        gpr.read<uint64_t>(instr->rs1()) | gpr.read<uint64_t>(instr->rs2());
+
+    gpr.write(instr->rd(), res);
+
+    INCR_AND_SIM_NEXT();
+}
+
+SIM_INSTR(XOR) {
+    auto &gpr = sim.m_hart.gprFile();
+
+    auto res =
+        gpr.read<uint64_t>(instr->rs1()) ^ gpr.read<uint64_t>(instr->rs2());
+
+    gpr.write(instr->rd(), res);
+
+    INCR_AND_SIM_NEXT();
+}
+
 SIM_INSTR(ADDI) {
     auto &gpr = sim.m_hart.gprFile();
 
@@ -47,7 +126,7 @@ SIM_INSTR(SLTI) {
     auto &gpr = sim.m_hart.gprFile();
 
     int64_t imm = static_cast<int32_t>(instr->imm());
-    uint64_t res = 1 ? gpr.read<int64_t>(instr->rs1()) < imm : 0;
+    uint64_t res = gpr.read<int64_t>(instr->rs1()) < imm ? 1 : 0;
 
     gpr.write(instr->rd(), res);
 
@@ -382,7 +461,7 @@ SIM_INSTR(JALR) {
 
     auto link_pc = sim.m_hart.pc() + 4;
     int64_t offset = static_cast<int32_t>(instr->imm());
-    auto new_pc = (offset + gpr.read<int64_t>(instr->rs1())) ^ 1;
+    auto new_pc = (offset + gpr.read<int64_t>(instr->rs1())) & ~1;
 
     if (new_pc & PC_ALIGN_MASK) {
         return SimStatus::SIM__PC_ALIGN_ERROR;
