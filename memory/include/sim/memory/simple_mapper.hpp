@@ -17,7 +17,7 @@ struct SimpleMemoryMapper final {
     // A and D flags are set by default
     class MemoryMapping final {
         static constexpr uint8_t DEFAULT_FLAGS =
-            PTEFlags::V_MASK & PTEFlags::A_MASK & PTEFlags::D_MASK;
+            PTEFlags::V_MASK | PTEFlags::A_MASK | PTEFlags::D_MASK;
 
         PTEFlags m_flags = 0;
         VPN m_vpn = 0;
@@ -25,7 +25,7 @@ struct SimpleMemoryMapper final {
 
       public:
         constexpr MemoryMapping(PTEFlags flags, VPN vpn, PPN ppn)
-            : m_flags(flags.raw() & DEFAULT_FLAGS), m_vpn(vpn), m_ppn(ppn) {}
+            : m_flags(flags.raw() | DEFAULT_FLAGS), m_vpn(vpn), m_ppn(ppn) {}
 
         NODISCARD constexpr auto flags() const noexcept { return m_flags; }
         NODISCARD constexpr auto vpn() const noexcept { return m_vpn; }
@@ -38,19 +38,26 @@ struct SimpleMemoryMapper final {
     Mode m_mode = Mode::BARE;
 
     PPN m_table_region_begin = 0;
-    PPN m_curr_table = m_table_region_begin;
+    PPN m_curr_table = m_table_region_begin + 1;
     PPN m_table_region_end = 0;
 
   public:
     // Create SimpleMemoryMapper.
-    // Pages with PPNs [table_region_begin, table_region_end) are allocated for translation tables.
-    // Root translation table is placed in table_region_begin page
+    // Pages with PPNs [table_region_begin, table_region_end) are allocated for
+    // translation tables. Root translation table is placed in
+    // table_region_begin page
     SimpleMemoryMapper(PhysMemory &phys_memory, Mode mode,
                        PPN table_region_begin, PPN table_region_end)
         : m_phys_memory(phys_memory), m_mode(mode),
           m_table_region_begin(table_region_begin),
           m_table_region_end(table_region_end) {
         SIM_ASSERT(table_region_begin < table_region_end);
+
+        // Map all translation pages
+        for (PPN table_ppn = m_table_region_begin;
+             table_ppn != m_table_region_end; ++table_ppn) {
+            SIM_ASSERT(m_phys_memory.addRAMPage(table_ppn * PAGE_SIZE));
+        }
     }
 
     // Add PTEs for given mapping

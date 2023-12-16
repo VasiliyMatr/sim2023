@@ -23,15 +23,13 @@ struct PTEFlags final {
         G_MASK = 1 << 5,
         A_MASK = 1 << 6,
         D_MASK = 1 << 7,
-
-        ALL_MASK = 0x7F,
     };
 
   private:
     uint8_t m_flags = 0;
 
   public:
-    constexpr PTEFlags(uint8_t flags = 0) : m_flags(flags & ALL_MASK) {}
+    constexpr PTEFlags(uint8_t flags = 0) : m_flags(flags) {}
 
     NODISCARD constexpr auto raw() const noexcept { return m_flags; }
 
