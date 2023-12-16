@@ -41,6 +41,8 @@ int main(int argc, char **argv) {
 
     auto status = simulator.simulate(entry_point);
 
+    std::cout << "icount = " << simulator.icount() << std::endl;
+
     std::cout << "GPRs:" << std::endl;
     dump_gpr_file(simulator.getHart().gprFile());
 
