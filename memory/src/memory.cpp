@@ -28,10 +28,10 @@ NODISCARD size_t modeToLevels(Mode mode) noexcept {
         return SV57_LEVELS;
 
     default:
-        SIM_ASSERT(0);
+        SIM_UNREACHABLE();
     }
 
-    SIM_ASSERT(0);
+    SIM_UNREACHABLE();
 }
 
 // Get va.VPN[i]
@@ -67,10 +67,10 @@ NODISCARD bool checkLeafFlags(PrivLevel priv_level, AccessType access_type,
         return flags.x() && (user_ok || super_x_ok);
 
     default:
-        SIM_ASSERT(0);
+        SIM_UNREACHABLE();
     }
 
-    SIM_ASSERT(0);
+    SIM_UNREACHABLE();
 }
 
 // Calculate resulting PhysAddr
@@ -213,7 +213,7 @@ NODISCARD SimStatus SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
         table_ppn = bit::getBitField(PTE_PPN_HI, PTE_PPN_LO, pte);
     }
 
-    SIM_ASSERT(0);
+    SIM_UNREACHABLE();
 }
 
 } // namespace sim::memory

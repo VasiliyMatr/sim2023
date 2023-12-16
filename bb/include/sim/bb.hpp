@@ -31,7 +31,7 @@ struct Bb final {
             return false;
         }
 
-        SIM_ASSERT(0);
+        SIM_UNREACHABLE();
     }
 
   public:

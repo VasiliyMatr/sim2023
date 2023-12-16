@@ -1,12 +1,12 @@
 #include <iomanip>
-#include <vector>
-#include <string>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include <sim/common.hpp>
+#include <sim/elf_load.hpp>
 #include <sim/memory.hpp>
 #include <sim/simulator.hpp>
-#include <sim/elf_load.hpp>
 
 using namespace sim;
 
@@ -53,5 +53,5 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    SIM_ASSERT(0);
+    SIM_UNREACHABLE();
 }

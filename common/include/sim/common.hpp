@@ -20,8 +20,18 @@
         }                                                                      \
     } while (0)
 
+#define SIM_UNREACHABLE()                                                      \
+    do {                                                                       \
+        std::cerr << "Encountered an unreachable point" << std::endl           \
+                  << "Location: " << __FILE__ << ":" << __LINE__ << std::endl; \
+                                                                               \
+        std::terminate();                                                      \
+    } while (0)
+
 #else
 #define SIM_ASSERT(cond) std::ignore = cond
+
+#define SIM_UNREACHABLE() std::terminate()
 
 #endif // #ifndef NDEBUG
 
