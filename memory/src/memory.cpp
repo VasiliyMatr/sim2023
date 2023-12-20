@@ -28,10 +28,10 @@ NODISCARD size_t modeToLevels(Mode mode) noexcept {
         return SV57_LEVELS;
 
     default:
-        SIM_ASSERT(0);
+        SIM_UNREACHABLE();
     }
 
-    SIM_ASSERT(0);
+    SIM_UNREACHABLE();
 }
 
 // Get va.VPN[i]
@@ -40,9 +40,9 @@ NODISCARD size_t getVPN(VirtAddr va, size_t i) noexcept {
     SIM_ASSERT(i < SV57_LEVELS);
 
     bit::BitIdx lo = PAGE_BIT_SIZE + i * VPN_BIT_STEP;
-    bit::BitIdx hi = lo + VPN_BIT_STEP;
+    bit::BitIdx hi = lo + VPN_BIT_STEP - 1;
 
-    return bit::getBitField<size_t>(va, hi, lo);
+    return bit::getBitField<size_t>(hi, lo, va);
 }
 
 // Check leaf PTE flags
@@ -67,10 +67,10 @@ NODISCARD bool checkLeafFlags(PrivLevel priv_level, AccessType access_type,
         return flags.x() && (user_ok || super_x_ok);
 
     default:
-        SIM_ASSERT(0);
+        SIM_UNREACHABLE();
     }
 
-    SIM_ASSERT(0);
+    SIM_UNREACHABLE();
 }
 
 // Calculate resulting PhysAddr
@@ -78,10 +78,15 @@ NODISCARD PhysAddr calcPhysAddr(PTE pte, VirtAddr va, size_t i) noexcept {
     static constexpr size_t SV57_LEVELS = 5;
     SIM_ASSERT(i < SV57_LEVELS);
 
-    bit::BitIdx used_ppn_lo = PTE_PPN_LO + i * PPN_BIT_STEP;
+    bit::BitSize super_page_bits = i * PPN_BIT_STEP;
+    bit::BitIdx ppn_lo = PTE_PPN_LO + super_page_bits;
+    bit::BitSize offset_bits = PAGE_BIT_SIZE + super_page_bits;
 
-    return bit::maskBits<PhysAddr>(pte, PTE_PPN_HI, used_ppn_lo) +
-           bit::getBitField<PhysAddr>(va, used_ppn_lo - 1, 0);
+    size_t offset = bit::getBitField(offset_bits - 1, 0, va);
+
+    auto ppn = bit::getBitField<PPN>(PTE_PPN_HI, ppn_lo, pte);
+
+    return offset + (ppn << offset_bits);
 }
 
 } // namespace
@@ -143,8 +148,9 @@ NODISCARD MMU64::Result MMU64::translate(PrivLevel priv_level,
     // Check superpage alignment
     if (i > 0) {
         static constexpr bit::BitIdx lo = 10;
+        bit::BitIdx hi = lo + PPN_BIT_STEP * i - 1;
 
-        if (bit::getBitField<PTE>(pte, PPN_BIT_STEP * i - 1 + lo, lo)) {
+        if (bit::getBitField<PTE>(hi, lo, pte)) {
             return PAGE_FAULT_RES;
         }
     }
@@ -213,7 +219,7 @@ NODISCARD SimStatus SimpleMemoryMapper::map(MemoryMapping mapping) noexcept {
         table_ppn = bit::getBitField(PTE_PPN_HI, PTE_PPN_LO, pte);
     }
 
-    SIM_ASSERT(0);
+    SIM_UNREACHABLE();
 }
 
 } // namespace sim::memory

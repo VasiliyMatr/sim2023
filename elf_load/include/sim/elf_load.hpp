@@ -18,87 +18,86 @@
 
 namespace sim::elf {
 
-auto load(const std::string &filename, sim::memory::PhysMemory &pm) {
-    SIM_ASSERT(elf_version(EV_CURRENT) != EV_NONE);
+class ElfLoader final {
+    using PPN = memory::PPN;
+    using VPN = memory::VPN;
 
-    // Open elf file
-    int elf_file = open(filename.c_str(), O_RDONLY);
-    SIM_ASSERT(elf_file != -1);
+    using MMUMode = csr::SATP64::MODEValue;
 
-    // Get elf file size
-    auto elf_size = lseek(elf_file, 0, SEEK_END);
-    lseek(elf_file, 0, SEEK_SET);
+    static constexpr VPN DEFAULT_STACK_BASE = 0x10000000;
+    static constexpr VPN DEFAULT_STACK_SIZE = 0x1000;
 
-    // Read elf file to buff
-    std::vector<uint8_t> elf_buf(elf_size, 0);
-    int read_num = read(elf_file, elf_buf.data(), elf_size);
-    SIM_ASSERT(read_num != -1);
+    static constexpr PPN DEFAULT_TABLE_REGION_SIZE = 0x10;
 
-    Elf *elf = elf_begin(elf_file, ELF_C_READ, nullptr);
-    SIM_ASSERT(elf != nullptr);
-    SIM_ASSERT(gelf_getclass(elf) != ELFCLASSNONE);
-    SIM_ASSERT(gelf_getclass(elf) != ELFCLASS32);
+    memory::PhysMemory &m_pm;
 
-    GElf_Ehdr elf_header{};
-    SIM_ASSERT(gelf_getehdr(elf, &elf_header) != nullptr);
+    VPN m_stack_base = DEFAULT_STACK_BASE;
+    VPN m_stack_size = DEFAULT_STACK_SIZE;
 
-    for (size_t i = 0; i < elf_header.e_phnum; ++i) {
-        GElf_Phdr seg_header{};
-        SIM_ASSERT(gelf_getphdr(elf, i, &seg_header) != nullptr);
+    MMUMode m_mmu_mode = MMUMode::SV39;
 
-        if (seg_header.p_type == PT_LOAD) {
-            Elf64_Xword seg_vaddr = seg_header.p_vaddr;
-            auto *seg_file_ptr = elf_buf.data() + seg_header.p_offset;
+    PPN m_table_region_begin = 0;
+    PPN m_table_region_size = DEFAULT_TABLE_REGION_SIZE;
+    PPN m_table_region_end = m_table_region_begin + m_table_region_size;
 
-            // Add RAM pages
-            for (VirtAddr curr_page_va = seg_vaddr & ~memory::PAGE_OFFSET_MASK,
-                          end = seg_vaddr + seg_header.p_memsz;
-                 curr_page_va < end; curr_page_va += memory::PAGE_SIZE) {
-                SIM_ASSERT(pm.addRAMPage(curr_page_va));
-            }
+    memory::SimpleMemoryMapper m_mapper{m_pm, m_mmu_mode, m_table_region_begin,
+                                        m_table_region_end};
 
-            // Fill RAM pages
-            for (size_t offset = 0, end = seg_header.p_filesz; offset < end;) {
-                VirtAddr curr_va = seg_vaddr + offset;
-                size_t page_offset = curr_va & memory::PAGE_OFFSET_MASK;
-                VirtAddr curr_page_va = curr_va - page_offset;
+    // Next ppn to map in virtual addrs mode
+    PPN m_next_map_ppn = m_table_region_end;
 
-                auto [status, host_page_ptr] = pm.write(curr_page_va, 0);
-                SIM_ASSERT(status == SimStatus::OK);
-                SIM_ASSERT(host_page_ptr != nullptr);
+    std::unordered_map<VPN, PPN> m_mapping{};
 
-                auto *host_begin = host_page_ptr + page_offset;
-                size_t cpy_size =
-                    std::min(memory::PAGE_SIZE - page_offset, end - offset);
-                std::memcpy(host_begin, seg_file_ptr + offset, cpy_size);
+    NODISCARD auto mapPage(VPN page_vpn) {
+        if (m_mmu_mode == MMUMode::BARE) {
+            // Map RAM page with same addr
+            SIM_ASSERT(m_pm.addRAMPage(page_vpn * memory::PAGE_SIZE));
+            return SimStatus::OK;
+        }
 
-                offset += cpy_size;
+        // Allocate new RAM page
+        PPN page_ppn = m_next_map_ppn++;
+        SIM_ASSERT(m_pm.addRAMPage(page_ppn * memory::PAGE_SIZE));
+
+        // Update mapping info
+        m_mapping.insert({page_vpn, page_ppn});
+
+        // Add arch mapping
+        using Flags = memory::PTEFlags;
+        Flags flags{Flags::U_MASK | Flags::R_MASK | Flags::W_MASK |
+                    Flags::X_MASK};
+
+        return m_mapper.map({flags, page_vpn, page_ppn});
+    }
+
+  public:
+    ElfLoader(memory::PhysMemory &pm) : m_pm(pm) {}
+
+    struct MapStackRes final {
+        SimStatus status = SimStatus::OK;
+        RegValue start_sp = 0;
+    };
+
+    NODISCARD MapStackRes mapStack() {
+        auto curr_vpn = m_stack_base - m_stack_size;
+
+        for (; curr_vpn != m_stack_base; ++curr_vpn) {
+            auto status = mapPage(curr_vpn);
+            if (status != SimStatus::OK) {
+                return {status, 0};
             }
         }
+
+        return {SimStatus::OK, m_stack_base * memory::PAGE_SIZE};
     }
 
-    elf_end(elf);
-    close(elf_file);
+    struct LoadElfRes final {
+        SimStatus status = SimStatus::OK;
+        RegValue start_pc = 0;
+    };
 
-    return elf_header.e_entry;
-}
-
-constexpr memory::VPN DEFAULT_SP_VPN = 0xfffffff;
-constexpr memory::VPN DEFAULT_STACK_VPN_SIZE = 0x1000;
-
-auto map_stack(sim::memory::PhysMemory &pm, memory::VPN sp_vpn = DEFAULT_SP_VPN,
-               size_t stack_vpn_size = DEFAULT_STACK_VPN_SIZE) {
-
-    VirtAddr curr_va = (sp_vpn - stack_vpn_size) * memory::PAGE_SIZE;
-    VirtAddr sp_va = sp_vpn * memory::PAGE_SIZE;
-
-    for (; curr_va <= sp_va; curr_va += memory::PAGE_SIZE) {
-
-        SIM_ASSERT(pm.addRAMPage(curr_va));
-    }
-
-    return sp_va;
-}
+    LoadElfRes loadElf(const char *elf_name);
+};
 
 } // namespace sim::elf
 

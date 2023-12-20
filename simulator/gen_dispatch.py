@@ -3,6 +3,7 @@ import sys
 import os
 
 IMPLEMENTED_INSTRS = [
+    "ADD", "SUB", "SLT", "SLTU", "AND", "OR", "XOR",
     "ADDI", "SLTI", "SLTIU", "ANDI", "ORI", "XORI",
     "ADDIW", "SLLI", "SRLI", "SRAI", "SLLIW", "SRLIW",
     "SRAIW", "LUI", "AUIPC", "SLL", "SRL", "SRA", "ADDW",

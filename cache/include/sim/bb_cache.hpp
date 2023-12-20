@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <type_traits>
 
+#include <sim/bb.hpp>
 #include <sim/common.hpp>
 #include <sim/memory.hpp>
 
@@ -16,7 +17,7 @@ template <bit::BitSize N_LOG_2> class BbCache final {
     static constexpr size_t N = 1ULL << N_LOG_2;
     static constexpr bit::BitSize PC_ALIGN_BITS = 2;
 
-    bb::Bb m_entries[N]{};
+    std::array<bb::Bb, N> m_entries{};
 
   public:
     void invalidate() noexcept {
@@ -26,7 +27,8 @@ template <bit::BitSize N_LOG_2> class BbCache final {
     }
 
     bb::Bb &find(VirtAddr virt_addr) {
-        return m_entries[bit::getBitField(PC_ALIGN_BITS + N_LOG_2, PC_ALIGN_BITS, virt_addr)];
+        return m_entries[bit::getBitField(PC_ALIGN_BITS + N_LOG_2 - 1,
+                                          PC_ALIGN_BITS, virt_addr)];
     }
 };
 

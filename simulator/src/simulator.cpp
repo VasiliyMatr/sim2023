@@ -28,7 +28,7 @@ SimStatus Simulator::simulate(VirtAddr start_pc) {
         }
     }
 
-    SIM_ASSERT(0);
+    SIM_UNREACHABLE();
 }
 
 } // namespace sim
