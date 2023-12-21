@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -32,7 +33,14 @@ void dump_gpr_file(const gpr::GPRFile &gpr_file) {
 int main(int argc, char **argv) {
     SIM_ASSERT(argc == 2);
 
-    auto simulator = sim::Simulator();
+#ifdef SIM_LOG_ENABLE
+    std::ofstream log{"log.txt"};
+    auto *log_ptr = &log;
+#else
+    std::ofstream *log_ptr = nullptr;
+#endif
+
+    auto simulator = sim::Simulator(log_ptr);
     auto &pm = simulator.getPhysMemory();
 
     elf::ElfLoader loader{pm};
