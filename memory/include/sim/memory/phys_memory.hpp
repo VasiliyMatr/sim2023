@@ -3,6 +3,9 @@
 
 #include <memory>
 #include <unordered_map>
+#include <vector>
+
+#include <sys/mman.h>
 
 #include <sim/memory/common.hpp>
 
@@ -13,17 +16,88 @@ using HostPtr = uint8_t *;
 // Pointer to host memory. Provided for fast access
 using ConstHostPtr = const uint8_t *;
 
+// mmap/munmap wrapper
+class MMap final {
+    PPN m_ppn = 0;
+    uint8_t *m_ptr = nullptr;
+
+  public:
+    MMap(PPN ppn)
+        : m_ppn(ppn), m_ptr(static_cast<uint8_t *>(
+                          mmap(nullptr, ppn * PAGE_SIZE, PROT_READ | PROT_WRITE,
+                               MAP_ANONYMOUS | MAP_PRIVATE, -1, 0))) {
+        SIM_ASSERT(ppn != 0);
+
+        if (m_ptr == MAP_FAILED) {
+            throw std::bad_alloc();
+        }
+    }
+
+    ~MMap() {
+        if (m_ptr != nullptr) {
+            munmap(m_ptr, m_ppn * PAGE_SIZE);
+        }
+    }
+
+    MMap(const MMap &) = delete;
+    MMap &operator=(const MMap &) = delete;
+
+    MMap(MMap &&rhs) noexcept {
+        std::swap(m_ppn, rhs.m_ppn);
+        std::swap(m_ptr, rhs.m_ptr);
+    }
+
+    MMap &operator=(MMap &&rhs) noexcept {
+        std::swap(m_ppn, rhs.m_ppn);
+        std::swap(m_ptr, rhs.m_ptr);
+
+        return *this;
+    }
+
+    auto *ptr() noexcept { return m_ptr; }
+    auto ppn() noexcept { return m_ppn; }
+};
+
+// Host pages allocator
+class PageAllocator final {
+    std::vector<MMap> m_mmaps{};
+    PPN m_curr_ppn = 0;
+
+  public:
+    PageAllocator(PPN ppn) {
+        SIM_ASSERT(ppn != 0);
+        m_mmaps.emplace_back(ppn);
+    }
+
+    uint8_t *allocPage() {
+        static constexpr size_t ALLOC_FACTOR = 2;
+
+        PPN end_ppn = m_mmaps.back().ppn();
+
+        if (m_curr_ppn == end_ppn) {
+            PPN new_ppn = end_ppn * ALLOC_FACTOR;
+            m_mmaps.emplace_back(MMap{new_ppn});
+            m_curr_ppn = 0;
+        }
+
+        return m_mmaps.back().ptr() + m_curr_ppn++ * PAGE_SIZE;
+    }
+};
+
 // Random access memory. Maps RAM pages to host pages
 class RAM final {
-    using HostPage = std::array<uint8_t, PAGE_SIZE>;
-    std::unordered_map<PhysAddr, std::unique_ptr<HostPage>> m_ram{};
+    static constexpr PPN PPN_16MB = PPN{1} << 12;
+
+    PageAllocator m_page_allocator{PPN_16MB};
+    std::unordered_map<PhysAddr, HostPtr> m_mapping{};
 
   public:
     // Add RAM page to mapping
     NODISCARD bool addPage(PhysAddr page_pa) {
         SIM_ASSERT(!(page_pa & PAGE_OFFSET_MASK));
 
-        return m_ram.try_emplace(page_pa, std::make_unique<HostPage>()).second;
+        return m_mapping.try_emplace(page_pa, m_page_allocator.allocPage())
+            .second;
     }
 
     // Get address of host page, mapped with given RAM page
@@ -31,24 +105,24 @@ class RAM final {
     getConstHostPagePtr(PhysAddr page_pa) const noexcept {
         SIM_ASSERT(!(page_pa & PAGE_OFFSET_MASK));
 
-        auto it = m_ram.find(page_pa);
-        if (it == m_ram.cend()) {
+        auto it = m_mapping.find(page_pa);
+        if (it == m_mapping.cend()) {
             return nullptr;
         }
 
-        return it->second->data();
+        return it->second;
     }
 
     // Get address of host page, mapped with given RAM page
     NODISCARD HostPtr getHostPagePtr(PhysAddr page_pa) noexcept {
         SIM_ASSERT(!(page_pa & PAGE_OFFSET_MASK));
 
-        auto it = m_ram.find(page_pa);
-        if (it == m_ram.end()) {
+        auto it = m_mapping.find(page_pa);
+        if (it == m_mapping.end()) {
             return nullptr;
         }
 
-        return it->second->data();
+        return it->second;
     }
 };
 

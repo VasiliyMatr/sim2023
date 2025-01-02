@@ -1,12 +1,13 @@
+#include <fstream>
 #include <iomanip>
-#include <vector>
-#include <string>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include <sim/common.hpp>
+#include <sim/elf_load.hpp>
 #include <sim/memory.hpp>
 #include <sim/simulator.hpp>
-#include <sim/elf_load.hpp>
 
 using namespace sim;
 
@@ -32,14 +33,32 @@ void dump_gpr_file(const gpr::GPRFile &gpr_file) {
 int main(int argc, char **argv) {
     SIM_ASSERT(argc == 2);
 
-    auto simulator = sim::Simulator();
+#ifdef SIM_LOG_ENABLE
+    std::ofstream log{"log.txt"};
+    auto *log_ptr = &log;
+#else
+    std::ofstream *log_ptr = nullptr;
+#endif
+
+    auto simulator = sim::Simulator(log_ptr);
     auto &pm = simulator.getPhysMemory();
 
-    auto sp = elf::map_stack(pm);
-    simulator.getHart().gprFile().write(gpr::GPR_IDX::SP, sp);
-    auto entry_point = elf::load(argv[1], pm);
+    elf::ElfLoader loader{pm};
 
-    auto status = simulator.simulate(entry_point);
+    auto [stack_map_status, start_sp] = loader.mapStack();
+    SIM_ASSERT(stack_map_status == SimStatus::OK);
+    simulator.getHart().gprFile().write(gpr::GPR_IDX::SP, start_sp);
+
+    auto [load_elf_status, start_pc] = loader.loadElf(argv[1]);
+    SIM_ASSERT(load_elf_status == SimStatus::OK);
+
+    csr::SATP64 satp64{};
+    satp64.setMODE(csr::SATP64::MODEValue::SV39);
+    simulator.getHart().csrFile().set(satp64);
+
+    auto status = simulator.simulate(start_pc);
+
+    std::cout << "icount = " << simulator.icount() << std::endl;
 
     std::cout << "GPRs:" << std::endl;
     dump_gpr_file(simulator.getHart().gprFile());
@@ -53,5 +72,5 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    SIM_ASSERT(0);
+    SIM_UNREACHABLE();
 }

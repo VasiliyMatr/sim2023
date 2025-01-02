@@ -5,10 +5,11 @@
 #include <cstdint>
 #include <iostream>
 #include <type_traits>
+#include <tuple>
 
 #define NODISCARD [[nodiscard]]
 
-#ifndef SIM_ASSERT
+#ifndef NDEBUG
 #define SIM_ASSERT(cond)                                                       \
     do {                                                                       \
         if (!(cond)) {                                                         \
@@ -19,7 +20,21 @@
             std::terminate();                                                  \
         }                                                                      \
     } while (0)
-#endif
+
+#define SIM_UNREACHABLE()                                                      \
+    do {                                                                       \
+        std::cerr << "Encountered an unreachable point" << std::endl           \
+                  << "Location: " << __FILE__ << ":" << __LINE__ << std::endl; \
+                                                                               \
+        std::terminate();                                                      \
+    } while (0)
+
+#else
+#define SIM_ASSERT(cond) std::ignore = cond
+
+#define SIM_UNREACHABLE() std::terminate()
+
+#endif // #ifndef NDEBUG
 
 namespace sim {
 

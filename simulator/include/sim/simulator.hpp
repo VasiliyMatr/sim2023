@@ -1,6 +1,7 @@
 #ifndef INCL_SIM_SIMULATOR_HPP
 #define INCL_SIM_SIMULATOR_HPP
 
+#include <iomanip>
 #include <type_traits>
 
 #include <sim/bb.hpp>
@@ -26,13 +27,53 @@ class Simulator final {
 
     hart::Hart m_hart{m_phys_memory};
 
-    ReadTLB m_read_tlb {};
-    WriteTLB m_write_tlb {};
-    ReadTLB m_fetch_tlb {};
+    ReadTLB m_read_tlb{};
+    WriteTLB m_write_tlb{};
+    ReadTLB m_fetch_tlb{};
 
     cache::BbCache<BB_CACHE_SIZE_LOG_2> m_bb_cache;
 
     size_t m_icount = 0;
+
+    std::ostream *m_log = nullptr;
+
+    static constexpr size_t LOG_REG_ID_FILL = 2;
+
+    void logInstr([[maybe_unused]] const char *mnemonic) {
+#ifdef SIM_LOG_ENABLE
+        if (m_log) {
+            *m_log << m_hart.pc() << ": " << mnemonic << std::endl;
+        }
+#endif
+    }
+
+    void logGprWrite([[maybe_unused]] size_t idx) {
+#ifdef SIM_LOG_ENABLE
+        if (m_log) {
+            auto value = m_hart.gprFile().read<RegValue>(idx);
+
+            *m_log << "\tReg [" << std::setw(LOG_REG_ID_FILL) << idx
+                   << "] <= " << value << std::endl;
+        }
+#endif
+    }
+
+    void logPcWrite() {
+#ifdef SIM_LOG_ENABLE
+        if (m_log) {
+            *m_log << "\tPc <= " << m_hart.pc() << std::endl;
+        }
+#endif
+    }
+
+    void logMemWrite([[maybe_unused]] VirtAddr va,
+                     [[maybe_unused]] RegValue value) {
+#ifdef SIM_LOG_ENABLE
+        if (m_log) {
+            *m_log << "\tMem [" << va << "] <= " << value << std::endl;
+        }
+#endif
+    }
 
     // Translate VA -> PA in current privilege level
     template <MemAccessType access_type> auto translateVa(VirtAddr va) {
@@ -45,8 +86,7 @@ class Simulator final {
         Int value = 0;
     };
 
-    template<MemAccessType access_type>
-    constexpr auto &getReadTLB() noexcept {
+    template <MemAccessType access_type> constexpr auto &getReadTLB() noexcept {
         if (access_type == MemAccessType::FETCH) {
             return m_fetch_tlb;
         }
@@ -107,6 +147,8 @@ class Simulator final {
 
         gpr.write(instr->rd(), res);
 
+        logGprWrite(instr->rd());
+
         ++m_icount;
         m_hart.pc() += INSTR_CODE_SIZE;
         return SimStatus::OK;
@@ -160,6 +202,8 @@ class Simulator final {
             return status;
         }
 
+        logMemWrite(va, value);
+
         ++m_icount;
         m_hart.pc() += INSTR_CODE_SIZE;
         return SimStatus::OK;
@@ -173,7 +217,7 @@ class Simulator final {
         auto rs2 = gpr.read<Int>(instr->rs2());
 
         if (Cmp<Int>()(rs1, rs2)) {
-            auto offset = static_cast<int64_t>(instr->imm());
+            auto offset = static_cast<int32_t>(instr->imm());
             auto new_pc = m_hart.pc() + offset;
 
             if (new_pc & 0x3) {
@@ -182,11 +226,17 @@ class Simulator final {
 
             ++m_icount;
             m_hart.pc() = new_pc;
+
+            logPcWrite();
+
             return SimStatus::OK;
         }
 
         ++m_icount;
         m_hart.pc() += INSTR_CODE_SIZE;
+
+        logPcWrite();
+
         return SimStatus::OK;
     }
 
@@ -218,6 +268,12 @@ class Simulator final {
     };
 
   public:
+    Simulator(std::ostream *log = nullptr) : m_log(log) {
+        if (m_log) {
+            *m_log << std::hex << std::setfill('0');
+        }
+    }
+
     auto &getHart() noexcept { return m_hart; }
     auto &getPhysMemory() noexcept { return m_phys_memory; }
 

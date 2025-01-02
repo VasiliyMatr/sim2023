@@ -15,6 +15,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Wextra")
 
+if(${SIM_LOG_ENABLE})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSIM_LOG_ENABLE")
+endif()
+
 find_package(GTest QUIET)
 if (NOT GTest_FOUND)
     message(WARNING "GTest package is not found. Tests will not be built.")

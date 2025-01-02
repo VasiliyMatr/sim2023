@@ -21,7 +21,12 @@ template <class HostPtr, bit::BitSize N_LOG_2> class TLB final {
         VirtAddr virt_addr = POISON_VA;
     };
 
-    Entry m_entries[N]{};
+    std::array<Entry, N> m_entries{};
+
+    auto &getEntry(VirtAddr virt_addr) noexcept {
+        return m_entries[bit::getBitField(memory::PAGE_BIT_SIZE + N_LOG_2 - 1,
+                                          memory::PAGE_BIT_SIZE, virt_addr)];
+    }
 
   public:
     void invalidate() noexcept {
@@ -30,19 +35,19 @@ template <class HostPtr, bit::BitSize N_LOG_2> class TLB final {
         }
     }
 
-    bool find(VirtAddr virt_addr, HostPtr &host) {
-        Entry &e = m_entries[bit::getBitField(
-            memory::PAGE_BIT_SIZE + N_LOG_2, memory::PAGE_BIT_SIZE, virt_addr)];
+    bool find(VirtAddr virt_addr, HostPtr &host) noexcept {
+        Entry &e = getEntry(virt_addr);
+
         host = e.host + (virt_addr & memory::PAGE_OFFSET_MASK);
         return (virt_addr & ~memory::PAGE_OFFSET_MASK) == e.virt_addr;
     }
 
-    void update(VirtAddr virt_addr, HostPtr host) {
-        Entry &e = m_entries[bit::getBitField(
-            memory::PAGE_BIT_SIZE + N_LOG_2, memory::PAGE_BIT_SIZE, virt_addr)];
+    void update(VirtAddr virt_addr, HostPtr host_page_ptr) noexcept {
+        Entry &e = getEntry(virt_addr);
+
         size_t offset = virt_addr & memory::PAGE_OFFSET_MASK;
         e.virt_addr = virt_addr - offset;
-        e.host = host - offset;
+        e.host = host_page_ptr;
     }
 };
 
